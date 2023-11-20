@@ -1,0 +1,8 @@
+[
+    {
+        "bool": true,
+        "dict_of_ints": {"a": 1, "b": 2},
+        "list_of_floats": [1.1, 2.2, 3.3],
+        "dict_of_list_of_bools": {"key": [true, false]}
+    }
+]

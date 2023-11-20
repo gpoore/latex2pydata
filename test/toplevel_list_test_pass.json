@@ -1,0 +1,10 @@
+[
+    {
+        "key1": "value1",
+        "key2": "value2",
+        "key3": "multiline\nvalue\n\"double quote\"\nbackslashes \\ \\ \\\\\n"
+    },
+    {
+        "second_dict_key1": "second_dict_value1"
+    }
+]

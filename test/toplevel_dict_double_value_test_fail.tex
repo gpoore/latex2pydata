@@ -1,0 +1,49 @@
+\documentclass{article}
+
+% Engine-specific settings
+% pdftex:
+\ifcsname pdfmatch\endcsname
+    \usepackage[T1]{fontenc}
+    \usepackage[utf8]{inputenc}
+\fi
+% xetex:
+\ifcsname XeTeXinterchartoks\endcsname
+    \usepackage{fontspec}
+    \defaultfontfeatures{Ligatures=TeX}
+\fi
+% luatex:
+\ifcsname directlua\endcsname
+    \usepackage{fontspec}
+\fi
+% End engine-specific settings
+
+\usepackage{latex2pydata}
+
+\begin{document}
+
+Test.
+
+% Alternative to \pydatasetfilename:
+%\newwrite\testdata
+%\immediate\openout\testdata=\jobname.pydata\relax
+%\pydatasetfilehandle{\testdata}
+
+\pydatasetfilename{\jobname.pydata}
+
+\pydatawritedictopen
+\pydatawritekeyvalue{key1}{value1}
+\pydatawritekey{key2}
+\pydatawritevalue{value2}
+\pydatawritevalue{value2}
+\pydatawritekey{key3}
+\begin{pydatawritemlvalue}
+multiline
+value
+"double quote"
+backslashes \ \ \\
+\end{pydatawritemlvalue}
+\pydatawritedictclose
+
+\pydataclosefilename{\jobname.pydata}
+
+\end{document}

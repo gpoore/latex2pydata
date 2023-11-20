@@ -1,0 +1,59 @@
+\documentclass{article}
+
+% Engine-specific settings
+% pdftex:
+\ifcsname pdfmatch\endcsname
+    \usepackage[T1]{fontenc}
+    \usepackage[utf8]{inputenc}
+\fi
+% xetex:
+\ifcsname XeTeXinterchartoks\endcsname
+    \usepackage{fontspec}
+    \defaultfontfeatures{Ligatures=TeX}
+\fi
+% luatex:
+\ifcsname directlua\endcsname
+    \usepackage{fontspec}
+\fi
+% End engine-specific settings
+
+\usepackage{latex2pydata}
+
+\begin{document}
+
+Test.
+
+\pydatasetfilename{\jobname.pydata}
+
+\pydatawritelistopen
+
+\pydatawritedictopen
+\pydatawritekeyvalue{key1 backslash \ double backslash \\ double space  quotes " "" """ """"}{backslash \ double backslash \\ double space  quotes " "" """ """"}
+\pydatawritekey{key2 backslash \ double backslash \\ double space  quotes " "" """ """"}
+\pydatawritevalue{backslash \ double backslash \\ double space  quotes " "" """ """"}
+\pydatawritekey{key3 backslash \ double backslash \\ double space  quotes " "" """ """"}
+\begin{pydatawritemlvalue}
+backslash \ double backslash \\ double space  quotes " "" """ """"
+backslash \ double backslash \\ double space  quotes " "" """ """"
+\end{pydatawritemlvalue}
+\pydatawritedictclose
+
+\pydatawritedictopen
+\pydatasetbuffername{testbuffer}
+\pydatabufferkeyvalue{bufkey1 backslash \ double backslash \\ double space  quotes " "" """ """"}{backslash \ double backslash \\ double space  quotes " "" """ """"}
+\pydatabufferkey{bufkey2 backslash \ double backslash \\ double space  quotes " "" """ """"}
+\pydatabuffervalue{backslash \ double backslash \\ double space  quotes " "" """ """"}
+\pydatabufferkey{bufkey3 backslash \ double backslash \\ double space  quotes " "" """ """"}
+\begin{pydatabuffermlvalue}
+backslash \ double backslash \\ double space  quotes " "" """ """"
+backslash \ double backslash \\ double space  quotes " "" """ """"
+\end{pydatabuffermlvalue}
+\pydatawritebuffer
+\pydataclearbuffername{testbuffer}
+\pydatawritedictclose
+
+\pydatawritelistclose
+
+\pydataclosefilename{\jobname.pydata}
+
+\end{document}

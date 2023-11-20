@@ -1,0 +1,456 @@
+%%
+%% This is file `latex2pydata.sty',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% latex2pydata.dtx  (with options: `package')
+%% 
+%% This is a generated file.
+%% 
+%% Copyright (C) 2023 by Geoffrey M. Poore <gpoore@gmail.com>
+%% --------------------------------------------------------------------------
+%% This work may be distributed and/or modified under the
+%% conditions of the LaTeX Project Public License, either version 1.3c
+%% of this license or (at your option) any later version.
+%% The latest version of this license is in
+%%   http://www.latex-project.org/lppl.txt
+%% and version 1.3c or later is part of all distributions of LaTeX
+%% version 2008/05/04 or later.
+%% 
+\NeedsTeXFormat{LaTeX2e}[1999/12/01]
+\ProvidesPackage{latex2pydata}
+    [2023/11/19 v0.1 latex2pydata - write data to file in Python literal format]
+\def\pydata@error#1{%
+  \PackageError{latex2pydata}{#1}{}%
+  \batchmode\read -1 to \pydata@exitnow}
+\def\pydata@warning#1{%
+  \PackageWarning{latex2pydata}{#1}}
+\RequirePackage{etoolbox}
+\RequirePackage{fvextra}
+\IfPackageAtLeastTF{fvextra}{2023/11/19}%
+ {}{\pydata@error{package fvextra is outdated; upgrade to the latest version}}
+\RequirePackage{pdftexcmds}
+\def\pydata@empty{}
+\newbool{pydata@canwrite}
+\newbool{pydata@hasmeta}
+\newbool{pydata@topexists}
+\newbool{pydata@topislist}
+\newbool{pydata@indict}
+\newbool{pydata@haskey}
+\def\pydata@fhstartstate#1{%
+  \expandafter\pydata@fhstartstate@i\expandafter{\number#1}}
+\newbool{pydata@fhnewstate}
+\def\pydata@fhstartstate@i#1{%
+  \ifcsname ifpydata@canwrite@#1\endcsname
+    \boolfalse{pydata@fhnewstate}%
+  \else
+    \booltrue{pydata@fhnewstate}%
+  \fi
+  \def\do##1{%
+    \providebool{pydata@##1@#1}%
+    \ifbool{pydata@##1@#1}{\booltrue{pydata@##1}}{\boolfalse{pydata@##1}}}%
+  \docsvlist{canwrite, hasmeta, topexists, topislist, indict, haskey}%
+  \ifbool{pydata@fhnewstate}{\booltrue{pydata@canwrite}{}}{}}
+\def\pydata@fhstopstate#1{%
+  \expandafter\pydata@fhstopstate@i\expandafter{\number#1}}
+\def\pydata@fhstopstate@i#1{%
+  \ifcsname ifpydata@canwrite@#1\endcsname
+    \def\do##1{%
+      \ifbool{pydata@##1}{\booltrue{pydata@##1@#1}}{\boolfalse{pydata@##1@#1}}%
+      \boolfalse{pydata@##1}}%
+    \docsvlist{canwrite, hasmeta, topexists, topislist, indict, haskey}%
+  \fi}
+\newbool{pydata@bufferhaskey}
+\let\pydata@filehandle\relax
+\def\pydata@checkfilehandle{%
+  \ifx\pydata@filehandle\relax
+    \pydata@error{Undefined file handle; use \string\pydatasetfilehandle}%
+  \fi}
+\def\pydatasetfilehandle#1{%
+  \ifx\pydata@filehandle\relax
+  \else
+    \pydata@fhstopstate{\pydata@filehandle}%
+  \fi
+  \let\pydata@filehandle#1\relax
+  \pydata@fhstartstate{#1}}
+\def\pydatareleasefilehandle#1{%
+  \ifx\pydata@filehandle\relax
+  \else
+    \ifx\pydata@filehandle#1\relax
+      \pydata@fhstopstate{#1}%
+      \let\pydata@filehandle\relax
+    \fi
+  \fi
+  \ifcsname ifpydata@canwrite@\number#1\endcsname
+    \ifbool{pydata@canwrite@\number#1}%
+     {\ifbool{pydata@haskey@\number#1}%
+       {\pydata@error{Incomplete data: key is waiting for value}}{}%
+      \ifbool{pydata@indict@\number#1}%
+       {\pydata@error{Incomplete data: dict is not closed}}{}%
+      \ifbool{pydata@topislist@\number#1}%
+       {\pydata@error{Incomplete data: list is not closed}}{}}%
+    {}%
+  \fi}
+\def\pydatasetfilename#1{%
+  \ifcsname pydata@fh@#1\endcsname
+  \else
+    \expandafter\newwrite\csname pydata@fh@#1\endcsname
+    \expandafter\immediate\expandafter\openout\csname pydata@fh@#1\endcsname=#1\relax
+    \AtEndDocument{\pydataclosefilename{#1}}%
+  \fi
+  \expandafter\pydatasetfilehandle\expandafter{\csname pydata@fh@#1\endcsname}}
+\def\pydataclosefilename#1{%
+  \ifcsname pydata@fh@#1\endcsname
+    \expandafter\pydatareleasefilehandle\expandafter{\csname pydata@fh@#1\endcsname}%
+    \expandafter\immediate\expandafter\closeout\csname pydata@fh@#1\endcsname
+    \expandafter\let\csname pydata@fh@#1\endcsname\pydata@undefined
+  \fi}
+\newcounter{pydata@bufferindex}
+\setcounter{pydata@bufferindex}{0}
+\def\pydatasetbuffername#1{%
+  \ifbool{pydata@bufferhaskey}%
+   {\pydata@error{Cannot change buffers when a buffered key is waiting for a value}}%
+   {}%
+  \def\pydata@buffername{#1}%
+  \def\pydata@bufferlinename{#1line}%
+  \def\pydata@bufferlengthname{#1length}%
+  \ifcsname c@\pydata@bufferlengthname\endcsname
+  \else
+    \expandafter\newcounter\expandafter{\pydata@bufferlengthname}%
+  \fi
+  \expandafter\setcounter\expandafter{\pydata@bufferlengthname}{0}}
+\pydatasetbuffername{pydata@defaultbuffer}
+\def\pydatawritebuffer{%
+  \ifnum\expandafter\value\expandafter{\pydata@bufferlengthname}<1\relax
+    \pydata@error{Cannot write empty buffer}%
+  \fi
+  \ifbool{pydata@indict}{}{\pydata@error{Cannot write a buffer unless in a dict}}%
+  \ifbool{pydata@bufferhaskey}%
+   {\pydata@error{Cannot write buffer when a buffered key is waiting for a value}}{}%
+  \setcounter{pydata@bufferindex}{1}%
+  \loop\unless\ifnum\value{pydata@bufferindex}>%
+      \expandafter\value\expandafter{\pydata@bufferlengthname}\relax
+    \immediate\write\pydata@filehandle{%
+      \csname\pydata@bufferlinename\arabic{pydata@bufferindex}\endcsname}%
+    \stepcounter{pydata@bufferindex}%
+  \repeat
+  \setcounter{pydata@bufferindex}{0}}
+\def\pydataclearbuffername#1{%
+  \def\pydata@clearbuffername{#1}%
+  \ifcsname c@#1length\endcsname
+  \else
+    \pydata@error{Buffer #1 does not exist}%
+  \fi
+  \setcounter{pydata@bufferindex}{1}%
+  \loop\unless\ifnum\value{pydata@bufferindex}>\value{#1length}\relax
+    \expandafter\let
+      \csname#1line\arabic{pydata@bufferindex}\endcsname\pydata@undefined
+    \stepcounter{pydata@bufferindex}%
+  \repeat
+  \setcounter{#1length}{0}%
+  \setcounter{pydata@bufferindex}{0}%
+  \ifx\pydata@clearbuffername\pydata@buffername
+    \boolfalse{pydata@bufferhaskey}%
+  \fi}
+\def\pydatabuffermdfivesum{%
+  \pdf@mdfivesum{%
+    \ifnum\expandafter\value\expandafter{\pydata@bufferlengthname}<1
+      \expandafter\@firstoftwo
+    \else
+      \expandafter\@secondoftwo
+    \fi
+    {}{\pydatabuffermdfivesum@i{1}}}}
+\def\pydatabuffermdfivesum@i#1{%
+  \csname\pydata@bufferlinename#1\endcsname^^J%
+  \ifnum\expandafter\value\expandafter{\pydata@bufferlengthname}=#1
+    \expandafter\@gobble
+  \else
+    \expandafter\@firstofone
+  \fi
+  {\expandafter\pydatabuffermdfivesum@i\expandafter{\the\numexpr#1+1 }}}
+\begingroup
+\catcode`\"=12\relax
+\begingroup
+\catcode`\!=0
+!catcode`!\=12
+!gdef!pydata@escstrtext#1{%
+  !expandafter!pydata@escstrtext@i!detokenize{#1}\!FV@Sentinel}
+!gdef!pydata@escstrtext@i#1\#2!FV@Sentinel{%
+  !if!relax!detokenize{#2}!relax
+    !expandafter!@firstoftwo
+  !else
+    !expandafter!@secondoftwo
+  !fi
+   {!pydata@escstrtext@ii#1"!FV@Sentinel}%
+   {!pydata@escstrtext@ii#1\\"!FV@Sentinel!pydata@escstrtext@i#2!FV@Sentinel}}
+!gdef!pydata@escstrtext@ii#1"#2!FV@Sentinel{%
+  !if!relax!detokenize{#2}!relax
+    !expandafter!@firstoftwo
+  !else
+    !expandafter!@secondoftwo
+  !fi
+   {#1}%
+   {#1\"!pydata@escstrtext@ii#2!FV@Sentinel}}
+!endgroup
+\gdef\pydata@quotestr#1{%
+  "\pydata@escstrtext{#1}"}
+\begingroup
+\catcode`\!=0
+!catcode`!\=12
+!gdef!pydata@mlstropen{"""\}
+!gdef!pydata@mlstrclose{"""}
+!endgroup
+\endgroup
+\def\pydata@schema{}
+\let\pydata@schemamissing@error\relax
+\let\pydata@schemamissing@rawstr\relax
+\let\pydata@schemamissing@evalany\relax
+\def\pydatasetschemamissing#1{%
+  \ifcsname pydata@schemamissing@\detokenize{#1}\endcsname
+  \else
+    \pydata@error{Invalid schema missing setting #1}%
+  \fi
+  \def\pydata@schemamissing{#1}}
+\pydatasetschemamissing{error}
+\begingroup
+\catcode`\:=12\relax
+\catcode`\,=12\relax
+\gdef\pydatasetschemakeytype#1#2{%
+  \ifbool{pydata@hasmeta}{\pydata@error{Must create schema before writing metadata}}{}%
+  \ifbool{pydata@topexists}{\pydata@error{Must create schema before writing data}}{}%
+  \expandafter\def\expandafter\pydata@schema\expandafter{%
+    \pydata@schema\pydata@quotestr{#1}: \pydata@quotestr{#2}, }}
+\endgroup
+\def\pydataclearschema{%
+  \def\pydata@schema{}}
+\def\pydataclearmeta{%
+  \pydatasetschemamissing{error}%
+  \pydataclearschema}
+\begingroup
+\catcode`\:=12\relax
+\catcode`\#=12\relax
+\catcode`\,=12\relax
+\gdef\pydatawritemeta{%
+  \ifbool{pydata@canwrite}%
+   {}{\pydata@error{Data was already written; cannot write metadata}}%
+  \ifbool{pydata@hasmeta}{\pydata@error{Already wrote metadata}}{}%
+  \ifbool{pydata@topexists}{\pydata@error{Must write metadata before writing data}}{}%
+  \edef\pydata@meta@exp{%
+    # latex2pydata metadata:
+    \@charlb
+    \pydata@quotestr{schema_missing}:
+    \expandafter\pydata@quotestr\expandafter{\pydata@schemamissing},
+    \pydata@quotestr{schema}:
+    \ifx\pydata@schema\pydata@empty
+      \expandafter\@firstoftwo
+    \else
+      \expandafter\@secondoftwo
+    \fi
+     {None}{\@charlb\pydata@schema\@charrb},
+    \@charrb}%
+  \immediate\write\pydata@filehandle{\pydata@meta@exp}%
+  \booltrue{pydata@hasmeta}}
+\endgroup
+\begingroup
+\catcode`\[=12\relax
+\catcode`\]=12\relax
+\gdef\pydatawritelistopen{%
+  \pydata@checkfilehandle
+  \ifbool{pydata@canwrite}%
+   {}{\pydata@error{Data structure is closed; cannot write delim}}%
+  \ifbool{pydata@topexists}%
+   {\pydata@error{Top-level data structure already exists}}{}%
+  \immediate\write\pydata@filehandle{[}%
+  \booltrue{pydata@topexists}%
+  \booltrue{pydata@topislist}}
+\gdef\pydatawritelistclose{%
+  \ifbool{pydata@topexists}%
+   {}{\pydata@error{No data structure is open; cannot write delim}}%
+  \ifbool{pydata@topislist}%
+   {}{\pydata@error{Top-level data structure is not a list}}%
+  \ifbool{pydata@haskey}%
+   {\pydata@error{Cannot close data structure when key is waiting for value}}{}%
+  \immediate\write\pydata@filehandle{]}%
+  \boolfalse{pydata@topexists}%
+  \boolfalse{pydata@topislist}%
+  \boolfalse{pydata@hasmeta}%
+  \boolfalse{pydata@canwrite}}
+\endgroup
+\begingroup
+\catcode`\,=12\relax
+\gdef\pydatawritedictopen{%
+  \ifbool{pydata@topislist}%
+   {\ifbool{pydata@indict}{\pydata@error{Already in a dict; cannot nest}}{}%
+    \immediate\write\pydata@filehandle{\@charlb}%
+    \booltrue{pydata@indict}}%
+   {\pydata@checkfilehandle
+    \ifbool{pydata@canwrite}%
+     {}{\pydata@error{Data structure is closed; cannot write delim}}%
+    \ifbool{pydata@topexists}%
+     {\pydata@error{Top-level data structure already exists}}{}%
+    \immediate\write\pydata@filehandle{\@charlb}%
+    \booltrue{pydata@topexists}%
+    \booltrue{pydata@indict}}}
+\gdef\pydatawritedictclose{%
+  \ifbool{pydata@indict}{}{\pydata@error{No dict is open; cannot write delim}}%
+  \ifbool{pydata@haskey}%
+   {\pydata@error{Cannot close data structure when key is waiting for value}}{}%
+  \ifbool{pydata@topislist}%
+   {\immediate\write\pydata@filehandle{\@charrb,}%
+    \boolfalse{pydata@indict}}%
+   {\immediate\write\pydata@filehandle{\@charrb}%
+    \boolfalse{pydata@indict}%
+    \boolfalse{pydata@topexists}%
+    \boolfalse{pydata@hasmeta}%
+    \boolfalse{pydata@canwrite}}}
+\endgroup
+\begingroup
+\catcode`\:=12\relax
+\gdef\pydatawritekey{%
+  \FVExtraReadVArg{\FVExtraDetokenizeVArg{\pydatawritekey@i}}}
+\gdef\pydatawritekey@i#1{%
+  \ifbool{pydata@indict}{}{\pydata@error{Cannot write a key unless in a dict}}%
+  \ifbool{pydata@haskey}{\pydata@error{Cannot write a key when waiting for a value}}{}%
+  \immediate\write\pydata@filehandle{%
+    \pydata@quotestr{#1}:%
+  }%
+  \booltrue{pydata@haskey}}
+\gdef\pydatabufferkey{%
+  \FVExtraReadVArg{\FVExtraDetokenizeVArg{\pydatabufferkey@i}}}
+\gdef\pydatabufferkey@i#1{%
+  \ifbool{pydata@bufferhaskey}%
+   {\pydata@error{Cannot buffer a key when waiting for a value}}{}%
+  \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
+  \expandafter\edef\csname
+    \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
+    \endcsname{%
+      \pydata@quotestr{#1}:%
+    }%
+  \booltrue{pydata@bufferhaskey}}
+\endgroup
+\begingroup
+\catcode`\,=12\relax
+\gdef\pydatawritevalue{%
+  \FVExtraReadVArg{\FVExtraDetokenizeVArg{\pydatawritevalue@i}}}
+\gdef\pydatawritevalue@i#1{%
+  \ifbool{pydata@haskey}{}{\pydata@error{Cannot write value when waiting for a key}}%
+  \immediate\write\pydata@filehandle{%
+    \pydata@quotestr{#1},%
+  }%
+  \boolfalse{pydata@haskey}}
+\gdef\pydatabuffervalue{%
+  \FVExtraReadVArg{\FVExtraDetokenizeVArg{\pydatabuffervalue@i}}}
+\gdef\pydatabuffervalue@i#1{%
+  \ifbool{pydata@bufferhaskey}%
+   {}{\pydata@error{Cannot buffer value when waiting for a key}}%
+  \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
+  \expandafter\edef\csname
+    \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
+    \endcsname{%
+      \pydata@quotestr{#1},%
+    }%
+  \boolfalse{pydata@bufferhaskey}}
+\endgroup
+\begingroup
+\catcode`\:=12\relax
+\catcode`\,=12\relax
+\gdef\pydatawritekeyvalue{%
+  \FVExtraReadVArg{\FVExtraDetokenizeVArg{\pydatawritekeyvalue@i}}}
+\gdef\pydatawritekeyvalue@i#1{%
+  \FVExtraReadVArg{\FVExtraDetokenizeVArg{\pydatawritekeyvalue@ii{#1}}}}
+\gdef\pydatawritekeyvalue@ii#1#2{%
+  \ifbool{pydata@indict}{}{\pydata@error{Cannot write a key unless in a dict}}%
+  \ifbool{pydata@haskey}{\pydata@error{Cannot write a key when waiting for a value}}{}%
+  \immediate\write\pydata@filehandle{%
+    \pydata@quotestr{#1}: \pydata@quotestr{#2},%
+  }}
+\gdef\pydatabufferkeyvalue{%
+  \FVExtraReadVArg{\FVExtraDetokenizeVArg{\pydatabufferkeyvalue@i}}}
+\gdef\pydatabufferkeyvalue@i#1{%
+  \FVExtraReadVArg{\FVExtraDetokenizeVArg{\pydatabufferkeyvalue@ii{#1}}}}
+\gdef\pydatabufferkeyvalue@ii#1#2{%
+  \ifbool{pydata@bufferhaskey}%
+   {\pydata@error{Cannot buffer a key when waiting for a value}}{}%
+  \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
+  \expandafter\edef\csname
+    \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
+    \endcsname{%
+      \pydata@quotestr{#1}: \pydata@quotestr{#2},%
+    }}
+\endgroup
+\begingroup
+\catcode`\,=12\relax
+\gdef\pydatawritemlvaluestart{%
+  \ifbool{pydata@haskey}{}{\pydata@error{Cannot write value when waiting for a key}}%
+  \immediate\write\pydata@filehandle{%
+    \pydata@mlstropen
+  }}
+\gdef\pydatawritemlvalueline#1{%
+  \ifbool{pydata@haskey}{}{\pydata@error{Cannot write value when waiting for a key}}%
+  \immediate\write\pydata@filehandle{%
+    \pydata@escstrtext{#1}%
+  }}
+\gdef\pydatawritemlvalueend{%
+  \ifbool{pydata@haskey}{}{\pydata@error{Cannot write value when waiting for a key}}%
+  \immediate\write\pydata@filehandle{%
+    \pydata@mlstrclose,%
+  }%
+  \boolfalse{pydata@haskey}}
+\gdef\pydatabuffermlvaluestart{%
+  \ifbool{pydata@bufferhaskey}%
+   {}{\pydata@error{Cannot buffer value when waiting for a key}}%
+  \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
+  \expandafter\edef\csname
+    \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
+    \endcsname{%
+      \pydata@mlstropen
+    }}
+\gdef\pydatabuffermlvalueline#1{%
+  \ifbool{pydata@bufferhaskey}%
+   {}{\pydata@error{Cannot buffer value when waiting for a key}}%
+  \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
+  \expandafter\edef\csname
+    \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
+    \endcsname{%
+      \pydata@escstrtext{#1}%
+    }}
+\gdef\pydatabuffermlvalueend{%
+  \ifbool{pydata@bufferhaskey}%
+   {}{\pydata@error{Cannot buffer value when waiting for a key}}%
+  \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
+  \expandafter\edef\csname
+    \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
+    \endcsname{%
+      \pydata@mlstrclose,%
+    }%
+  \boolfalse{pydata@bufferhaskey}}
+\endgroup
+\newenvironment{pydatawritemlvalue}%
+ {\VerbatimEnvironment
+  \pydatawritemlvaluestart
+  \begin{VerbatimWrite}[writer=\pydatawritemlvalueline]}%
+ {\end{VerbatimWrite}}
+\AfterEndEnvironment{pydatawritemlvalue}{\pydatawritemlvalueend}
+\newenvironment{pydatabuffermlvalue}%
+ {\VerbatimEnvironment
+  \begin{VerbatimBuffer}[buffername=pydata@tmpbuffer, globalbuffer=true]}%
+ {\end{VerbatimBuffer}}
+\AfterEndEnvironment{pydatabuffermlvalue}{%
+  \pydatabuffermlvaluestart
+  \setcounter{pydata@bufferindex}{1}%
+  \loop\unless\ifnum\value{pydata@bufferindex}>\value{pydata@tmpbufferlength}\relax
+    \expandafter\let\expandafter\pydata@tmpbufferline
+      \csname pydata@tmpbufferline\arabic{pydata@bufferindex}\endcsname
+    \expandafter\let
+      \csname pydata@tmpbufferline\arabic{pydata@bufferindex}\endcsname\pydata@undefined
+    \expandafter\pydatabuffermlvalueline\expandafter{\pydata@tmpbufferline}%
+    \stepcounter{pydata@bufferindex}%
+  \repeat
+  \setcounter{pydata@tmpbufferlength}{0}%
+  \setcounter{pydata@bufferindex}{0}%
+  \pydatabuffermlvalueend}
+%% \Finale
+\endinput
+%%
+%% End of file `latex2pydata.sty'.

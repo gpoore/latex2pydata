@@ -1,0 +1,54 @@
+\documentclass{article}
+
+% Engine-specific settings
+% pdftex:
+\ifcsname pdfmatch\endcsname
+    \usepackage[T1]{fontenc}
+    \usepackage[utf8]{inputenc}
+\fi
+% xetex:
+\ifcsname XeTeXinterchartoks\endcsname
+    \usepackage{fontspec}
+    \defaultfontfeatures{Ligatures=TeX}
+\fi
+% luatex:
+\ifcsname directlua\endcsname
+    \usepackage{fontspec}
+\fi
+% End engine-specific settings
+
+\usepackage{latex2pydata}
+
+\begin{document}
+
+Test.
+
+\pydatasetfilename{\jobname.pydata}
+
+\pydatasetschemakeytype{bool}{bool}
+\pydatasetschemakeytype{dict_of_ints}{dict[str,int]}
+\pydatasetschemakeytype{list_of_floats}{list[float]}
+\pydatasetschemakeytype{dict_of_list_of_bools}{dict[str,list[bool]]}
+\pydatawritemeta
+
+
+\pydatawritelistopen
+\pydatawritedictopen
+\pydatawritekeyvalue{bool}{True}
+\pydatawritekey{dict_of_ints}
+\pydatawritevalue{{'a': 1, 'b': 2}}
+\pydatawritekey{list_of_floats}
+\begin{pydatawritemlvalue}
+[
+    1.1,
+    2.2,
+    3.3,
+]
+\end{pydatawritemlvalue}
+\pydatawritekeyvalue{dict_of_list_of_bools}{{"key": [True, False]}}
+\pydatawritedictclose
+\pydatawritelistclose
+
+\pydataclosefilename{\jobname.pydata}
+
+\end{document}
