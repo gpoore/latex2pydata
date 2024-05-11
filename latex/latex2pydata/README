@@ -2,7 +2,7 @@ latex2pydata - write data to file in Python literal format
 
 Author:  Geoffrey M. Poore
 License:  LPPL v1.3c or later
-Development:  https://github.com/gpoore/latex2pydata_tex
+Development:  https://github.com/gpoore/latex2pydata/tree/main/latex
 
 
 latex2pydata is a LaTeX package for writing data to file using Python literal

@@ -3,7 +3,7 @@
 The latex2pydata Python package is designed to load data in
 [Python literal format](https://docs.python.org/3/reference/lexical_analysis.html#literals)
 that was saved to file by the
-[latex2pydata LaTeX package](https://github.com/gpoore/latex2pydata_tex).
+[latex2pydata LaTeX package](https://github.com/gpoore/latex2pydata/tree/main/latex).
 This allows data to be passed from [LaTeX](https://www.latex-project.org/) to
 Python.
 
@@ -44,7 +44,7 @@ data.  That is, schema validation is currently performed before key path
 unpacking.
 
 See the source code and the
-[latex2pydata LaTeX package](https://github.com/gpoore/latex2pydata_tex)
+[latex2pydata LaTeX package](https://github.com/gpoore/latex2pydata/tree/main/latex)
 documentation for additional details about schema support.
 
 
@@ -67,4 +67,4 @@ The package provides two functions for loading data:
 
 The latex2pydata Python package includes tests.  Additional tests are part
 of the
-[latex2pydata LaTeX package](https://github.com/gpoore/latex2pydata_tex).
+[latex2pydata LaTeX package](https://github.com/gpoore/latex2pydata/tree/main/latex).

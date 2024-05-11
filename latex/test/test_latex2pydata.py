@@ -14,8 +14,8 @@ except ImportError:
     latex2pydata = None
 
 
-if not pathlib.Path.cwd().parts[-2:] == ('latex2pydata_tex', 'test'):
-    sys.exit('Tests must run with latex2pydata_tex/test/ as the working directory')
+if not pathlib.Path.cwd().parts[-3:] == ('latex2pydata', 'latex', 'test'):
+    sys.exit('Tests must run with latex2pydata/latex/test/ as the working directory')
 
 texfiles_tested: set[pathlib.Path] = set()
 test_failures: list[str] = []
