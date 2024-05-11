@@ -12,7 +12,7 @@ For these documents, there are also `.json` files containing the expected data
 and/or `.testdata` files containing the expected literal content of the
 `.pydata` files.  Loading the `.pydata` files to obtain a successful data
 match with the `.json` files requires that the
-[`latex2pydata` Python package](https://github.com/gpoore/latex2pydata_py)
+[`latex2pydata` Python package](https://github.com/gpoore/latex2pydata/tree/main/python)
 be installed in some cases.
 
 To run tests, simply execute the include Python script `test_latex2pydata.py`.

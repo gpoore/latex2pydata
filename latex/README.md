@@ -6,7 +6,7 @@ writing data to file using
 The data may be loaded safely in Python using the
 [`ast.literal_eval()`](https://docs.python.org/3/library/ast.html#ast.literal_eval)
 function or the
-[`latex2pydata` Python package](https://github.com/gpoore/latex2pydata_py).
+[`latex2pydata` Python package](https://github.com/gpoore/latex2pydata/tree/main/python).
 
 The top-level data structure can be configured as either a Python dict or a
 list of dicts.  Within dicts, all keys and values are written to file as
@@ -17,7 +17,7 @@ data types such as dicts, lists, sets, bools, and numbers.
 
 The data is suitable for direct loading in Python with `ast.literal_eval()`.
 It is also possible to load data using the
-[`latex2pydata` Python package](https://github.com/gpoore/latex2pydata_py).
+[`latex2pydata` Python package](https://github.com/gpoore/latex2pydata/tree/main/python).
 This functions as a wrapper for `ast.literal_eval()`.  The package requires
 all keys to match the regex `[A-Za-z_][0-9A-Za-z_]*`.  Periods in keys are
 interpreted as key paths and indicate sub-dicts.  For example, the key path

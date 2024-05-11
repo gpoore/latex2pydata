@@ -34,9 +34,9 @@ classifiers = [
 
 
 [project.urls]
-homepage = 'https://github.com/gpoore/latex2pydata_py'
-repository = 'https://github.com/gpoore/latex2pydata_py'
-changelog = 'https://github.com/gpoore/latex2pydata_py/blob/master/CHANGELOG.md'
+homepage = 'https://github.com/gpoore/latex2pydata/tree/main/python'
+repository = 'https://github.com/gpoore/latex2pydata'
+changelog = 'https://github.com/gpoore/latex2pydata/blob/main/python/CHANGELOG.md'
 
 
 [tool.setuptools]
