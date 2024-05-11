@@ -1,0 +1,54 @@
+[build-system]
+requires = ['setuptools']
+
+
+[project]
+name = 'latex2pydata'
+description = 'Load data from LaTeX in Python literal format'
+readme = 'README.md'
+requires-python = '>= 3.7'
+authors = [
+    {name = 'Geoffrey M. Poore', email = 'gpoore@gmail.com'}
+]
+license = {file = 'LICENSE.txt'}
+dynamic = ['version']
+keywords = [
+    'deserialization',
+    'LaTeX',
+    'Python literal format',
+]
+dependencies = [
+]
+# https://pypi.python.org/pypi?:action=list_classifiers
+classifiers = [
+    'Development Status :: 4 - Beta',
+    'Programming Language :: Python',
+    'Intended Audience :: Developers',
+    'Intended Audience :: Education',
+    'Intended Audience :: Science/Research',
+    'License :: OSI Approved :: BSD License',
+    'Operating System :: OS Independent',
+    'Topic :: File Formats',
+    'Topic :: Software Development :: Libraries',
+]
+
+
+[project.urls]
+homepage = 'https://github.com/gpoore/latex2pydata_py'
+repository = 'https://github.com/gpoore/latex2pydata_py'
+changelog = 'https://github.com/gpoore/latex2pydata_py/blob/master/CHANGELOG.md'
+
+
+[tool.setuptools]
+license-files = ['LICENSE*', 'CHANGELOG*']
+
+[tool.setuptools.dynamic]
+version = {attr = 'latex2pydata.__version__'}
+
+
+[tool.ruff]
+line-length = 120
+
+
+[tool.pytest.ini_options]
+pythonpath = ['.']
