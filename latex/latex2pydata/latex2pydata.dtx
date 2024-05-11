@@ -26,7 +26,7 @@
 %<package>\NeedsTeXFormat{LaTeX2e}[1999/12/01]
 %<package>\ProvidesPackage{latex2pydata}
 %<*package>
-    [2023/11/19 v0.1 latex2pydata - write data to file in Python literal format]
+    [2024/05/11 v0.2.0.dev1 latex2pydata - write data to file in Python literal format]
 %</package>
 %
 %<*driver>
@@ -67,23 +67,7 @@
 
 \usepackage{tcolorbox}
 \tcbuselibrary{listings}
-% strip leading percent symbols
-\def\tcbverbatimwrite#1{%
-  \@bsphack
-  \tcb@set@verbatim@finish%
-  \tcb@allocate@tcb@out%
-  \immediate\openout\tcb@out #1
-  \tcb@verbatim@begin@hook%
-  \let\do\@makeother\dospecials
-  \tcb@verbatim@change@percent\catcode`\^^M\active \catcode`\^^I=12
-  \def\verbatim@processline{%
-    \immediate\write\tcb@out
-      {\expandafter\@gobble\the\verbatim@line}}%
-  \verbatim@start}%
-
-% fix redefinition by tcolorbox
-\def\verbatim@processline{%
-  \expandafter\check@percent\the\verbatim@line\par}
+\tcbset{verbatim ignore percent}
 
 \usepackage{hyperref}
 \hypersetup{
