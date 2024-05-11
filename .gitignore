@@ -11,7 +11,8 @@ _*/
 *.hd
 *.listing
 *.pydata
-test/*.sty
+**/test/*.sty
+**/*.egg-info/
 
 # Windows image file caches
 Thumbs.db
