@@ -20,6 +20,11 @@
 
 *  Added error messages for unknown file handles and file names.
 
+*  Added documentation for `\pydatawritemlvaluestart`,
+   `\pydatawritemlvalueline`, `\pydatawritemlvalueend`,
+   `\pydatabuffermlvaluestart`, `\pydatabuffermlvalueline`,
+   `\pydatabuffermlvalueend`.
+
 *  Updated `tcblisting` usage in docs for compatibility with the latest
    `tcolorbox`.
 

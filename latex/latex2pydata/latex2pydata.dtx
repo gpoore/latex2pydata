@@ -26,7 +26,7 @@
 %<package>\NeedsTeXFormat{LaTeX2e}[1999/12/01]
 %<package>\ProvidesPackage{latex2pydata}
 %<*package>
-    [2024/05/13 v0.2.0.dev3 latex2pydata - write data to file in Python literal format]
+    [2024/05/13 v0.2.0.dev4 latex2pydata - write data to file in Python literal format]
 %</package>
 %
 %<*driver>
@@ -484,6 +484,14 @@
 %
 % This environment uses \fvextra\ and \fancyvrb\ internally to capture the environment contents verbatim.  If a new environment is defined as a wrapper for |pydatawritemlvalue|, then |\VerbatimEnvironment| must be used at the beginning of the new environment definition.  This configures \fancyvrb\ to find the end of the new environment correctly.
 %
+% \DescMacro{\pydatawritemlvaluestart}
+%
+% \DescMacro{\pydatawritemlvalueline\marg{line}}
+%
+% \DescMacro{\pydatawritemlvalueend}
+% These commands allow writing a multi-line value to file one line at a time.  \meta{line} is interpreted verbatim.
+%
+%
 %
 % \subsection{Buffer}
 %
@@ -538,6 +546,13 @@
 % Append a multi-line value to the buffer.
 %
 % This environment uses \fvextra\ and \fancyvrb\ internally to capture the environment contents verbatim.  If a new environment is defined as a wrapper for |pydatabuffermlvalue|, then |\VerbatimEnvironment| must be used at the beginning of the new environment definition.  This configures \fancyvrb\ to find the end of the new environment correctly.
+%
+% \DescMacro{\pydatabuffermlvaluestart}
+%
+% \DescMacro{\pydatabuffermlvalueline\marg{line}}
+%
+% \DescMacro{\pydatabuffermlvalueend}
+% These commands allow buffering a multi-line value one line at a time.  \meta{line} is interpreted verbatim.
 %
 %
 %
