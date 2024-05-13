@@ -26,7 +26,7 @@
 %<package>\NeedsTeXFormat{LaTeX2e}[1999/12/01]
 %<package>\ProvidesPackage{latex2pydata}
 %<*package>
-    [2024/05/13 v0.2.0.dev4 latex2pydata - write data to file in Python literal format]
+    [2024/05/13 v0.2.0.dev5 latex2pydata - write data to file in Python literal format]
 %</package>
 %
 %<*driver>
@@ -232,22 +232,6 @@
 
 \edef\hashchar{\string#}
 
-\newcommand{\changestext}{}
-\NewEnviron{changelog}[2]{%
-    \g@addto@macro\changestext{\item[#1] (#2) \begin{itemize}}%
-    \expandafter\g@addto@macro\expandafter\changestext\expandafter{\BODY}%
-    \g@addto@macro\changestext{\end{itemize}}%
-}
-\newcommand{\PrintChangelog}{%
-    %\addcontentsline{toc}{section}{Changelog}
-    %\section*{Changelog}%
-    \section{Changelog}
-    \label{sec:changelog}
-    \begin{description}%
-    \changestext
-    \end{description}%
-}
-
 \begingroup
 \catcode`\#=12\relax
 \gdef\astliteval{\href{https://docs.python.org/3/library/ast.html#ast.literal_eval}{\code{ast.literal_eval()}}}
@@ -268,11 +252,6 @@
 \end{document}
 %</driver>
 % \fi
-%
-%
-% \begin{changelog}{v0.1}{2023-11-19}
-% \item Initial release.
-% \end{changelog}
 %
 %
 % \DoNotIndex{\newcommand,\newenvironment}
@@ -556,8 +535,6 @@
 %
 %
 %
-%
-% \PrintChangelog
 %
 % \StopEventually{\PrintIndex}
 %
