@@ -14,6 +14,10 @@
    attempts to close files `\AtEndDocument`, since that can interfere with
    files that need to remain open as long as possible.
 
+*  Added new commands `\pydatawritekeyedefvalue` and
+   `\pydatabufferkeyedefvalue`.  These `\edef` the value before interpreting
+   it as verbatim text.
+
 *  Added error messages for unknown file handles and file names.
 
 *  Updated `tcblisting` usage in docs for compatibility with the latest

@@ -8,7 +8,7 @@
 %% 
 %% This is a generated file.
 %% 
-%% Copyright (C) 2023 by Geoffrey M. Poore <gpoore@gmail.com>
+%% Copyright (C) 2023-2024 by Geoffrey M. Poore <gpoore@gmail.com>
 %% --------------------------------------------------------------------------
 %% This work may be distributed and/or modified under the
 %% conditions of the LaTeX Project Public License, either version 1.3c
@@ -20,7 +20,7 @@
 %% 
 \NeedsTeXFormat{LaTeX2e}[1999/12/01]
 \ProvidesPackage{latex2pydata}
-    [2024/05/12 v0.2.0.dev2 latex2pydata - write data to file in Python literal format]
+    [2024/05/13 v0.2.0.dev3 latex2pydata - write data to file in Python literal format]
 \def\pydata@error#1{%
   \PackageError{latex2pydata}{#1}{}%
   \batchmode\read -1 to \pydata@exitnow}
@@ -408,6 +408,13 @@
   \immediate\write\pydata@filehandle{%
     \pydata@quotestr{#1}: \pydata@quotestr{#2},%
   }}
+\gdef\pydatawritekeyedefvalue{%
+  \FVExtraReadVArg{\FVExtraDetokenizeVArg{\pydatawritekeyedefvalue@i}}}
+\gdef\pydatawritekeyedefvalue@i#1#2{%
+  \edef\pydata@tmp{#2}%
+  \expandafter\pydatawritekeyedefvalue@ii\expandafter{\pydata@tmp}{#1}}
+\gdef\pydatawritekeyedefvalue@ii#1#2{%
+  \FVExtraDetokenizeVArg{\pydatawritekeyvalue@ii{#2}}{#1}}
 \gdef\pydatabufferkeyvalue{%
   \FVExtraReadVArg{\FVExtraDetokenizeVArg{\pydatabufferkeyvalue@i}}}
 \gdef\pydatabufferkeyvalue@i#1{%
@@ -421,6 +428,13 @@
     \endcsname{%
       \pydata@quotestr{#1}: \pydata@quotestr{#2},%
     }}
+\gdef\pydatabufferkeyedefvalue{%
+  \FVExtraReadVArg{\FVExtraDetokenizeVArg{\pydatabufferkeyedefvalue@i}}}
+\gdef\pydatabufferkeyedefvalue@i#1#2{%
+  \edef\pydata@tmp{#2}%
+  \expandafter\pydatabufferkeyedefvalue@ii\expandafter{\pydata@tmp}{#1}}
+\gdef\pydatabufferkeyedefvalue@ii#1#2{%
+  \FVExtraDetokenizeVArg{\pydatabufferkeyvalue@ii{#2}}{#1}}
 \endgroup
 \begingroup
 \catcode`\,=12\relax

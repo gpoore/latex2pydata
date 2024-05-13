@@ -1,0 +1,45 @@
+\documentclass{article}
+
+% Engine-specific settings
+% pdftex:
+\ifcsname pdfmatch\endcsname
+    \usepackage[T1]{fontenc}
+    \usepackage[utf8]{inputenc}
+\fi
+% xetex:
+\ifcsname XeTeXinterchartoks\endcsname
+    \usepackage{fontspec}
+    \defaultfontfeatures{Ligatures=TeX}
+\fi
+% luatex:
+\ifcsname directlua\endcsname
+    \usepackage{fontspec}
+\fi
+% End engine-specific settings
+
+\usepackage{latex2pydata}
+
+\begin{document}
+
+Test.
+
+% Alternative to \pydatasetfilename:
+%\newwrite\testdata
+%\immediate\openout\testdata=\jobname.pydata\relax
+%\pydatasetfilehandle{\testdata}
+
+\expandafter\def\expandafter\subval\expandafter{\detokenize{`~#$\%^&\a1}}
+\def\bufval{<\subval>}
+\def\val{[\subval]}
+
+\pydatasetbuffername{buffer}
+\pydatabufferkeyedefvalue{key1}{\bufval}
+
+\pydatasetfilename{\jobname.pydata}
+\pydatawritedictopen
+\pydatawritebuffer
+\pydatawritekeyedefvalue{key2}{\val}
+\pydatawritedictclose
+\pydataclosefilename{\jobname.pydata}
+
+\end{document}
