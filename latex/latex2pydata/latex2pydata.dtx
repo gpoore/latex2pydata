@@ -26,7 +26,7 @@
 %<package>\NeedsTeXFormat{LaTeX2e}[1999/12/01]
 %<package>\ProvidesPackage{latex2pydata}
 %<*package>
-    [2024/05/11 v0.2.0.dev1 latex2pydata - write data to file in Python literal format]
+    [2024/05/12 v0.2.0.dev2 latex2pydata - write data to file in Python literal format]
 %</package>
 %
 %<*driver>
@@ -385,7 +385,7 @@
 % \DescMacro{\pydatareleasefilehandle\marg{filehandle}}
 % When a file handle is no longer needed, remove references to it.  Also perform basic checking for incomplete or malformed data written to file.
 %
-% This should only be used once per file handle, after all data has been written.  It is not needed when switching from one file handle to another when both files remain open; in that case, only |\pydatasetfilehandle| is needed.
+% This should only be used once per opened file, after all data has been written, just before the file is closed.  It is not needed when switching from one file handle to another when both files remain open; in that case, only |\pydatasetfilehandle| is needed.  If |\pydatareleasefilehandle| is used before all data is written, or it is used multiple times while writing to the same file, then it is no longer possible to detect incomplete or malformed data.
 %
 % \DescMacro{\pydatasetfilename\marg{filename}}
 % Configure a file for writing based on filename, opening the file if necessary.  For example:
@@ -583,55 +583,83 @@
 % \end{macro}
 %
 %
+% \begin{macro}{\pydata@newglobalbool, \pydata@provideglobalbool}
+% Variants of \pkg{etoolbox}'s |\newbool| and |\providebool| that create bools whose state is always global.  When these global bools are used with |\setbool|, |\booltrue|, or |\boolfalse|, the global state is updated regardless of whether the command is prefixed with |\global|.  These use a global variant of \LaTeX's |\newif| internally.
+%    \begin{macrocode}
+\def\pydata@gnewif#1{%
+  \count@\escapechar
+  \escapechar\m@ne
+  \global\let#1\iffalse
+  \pydata@gif#1\iftrue
+  \pydata@gif#1\iffalse
+  \escapechar\count@}
+\def\pydata@gif#1#2{%
+  \expandafter\gdef\csname
+    \expandafter\@gobbletwo\string#1\expandafter\@gobbletwo\string#2\endcsname
+     {\global\let#1#2}}
+\newrobustcmd*{\pydata@newglobalbool}[1]{%
+  \begingroup
+  \let\newif\pydata@gnewif
+  \newbool{#1}%
+  \endgroup}
+\newrobustcmd*{\pydata@provideglobalbool}[1]{%
+  \begingroup
+  \let\newif\pydata@gnewif
+  \providebool{#1}%
+  \endgroup}
+%    \end{macrocode}
+% \end{macro}
+%
+%
 %
 % \subsection{State}
 %
-% Track state of writing data and of buffering data.
+% Track state of writing data and of buffering data.  Notice that bools for tracking state are a special, custom variant that is always global.
 %
 % \begin{macro}{pydata@canwrite}
 % Whether data can be written.  False if a file handle has not been set or if the top-level data structure has been closed.
 %    \begin{macrocode}
-\newbool{pydata@canwrite}
+\pydata@newglobalbool{pydata@canwrite}
 %    \end{macrocode}
 % \end{macro}
 %
 % \begin{macro}{pydata@hasmeta}
 % Whether metadata was written.  Metadata is a \code{dict[str, str | dict[str, str]]}.
 %    \begin{macrocode}
-\newbool{pydata@hasmeta}
+\pydata@newglobalbool{pydata@hasmeta}
 %    \end{macrocode}
 % \end{macro}
 %
 % \begin{macro}{pydata@topexists}
 % Whether the top-level data structure has been configured.  The top-level data structure can be a list or a dict.  The overall data structure must be either |dict[str, str]| or |list[dict[str, str]]|.
 %    \begin{macrocode}
-\newbool{pydata@topexists}
+\pydata@newglobalbool{pydata@topexists}
 %    \end{macrocode}
 % \end{macro}
 %
 % \begin{macro}{pydata@topislist}
 % Whether the top-level data structure is a list.
 %    \begin{macrocode}
-\newbool{pydata@topislist}
+\pydata@newglobalbool{pydata@topislist}
 %    \end{macrocode}
 % \end{macro}
 %
 % \begin{macro}{pydata@indict}
 % Whether a dict has been opened.
 %    \begin{macrocode}
-\newbool{pydata@indict}
+\pydata@newglobalbool{pydata@indict}
 %    \end{macrocode}
 % \end{macro}
 %
 % \begin{macro}{pydata@haskey}
 % Whether a key has been written (waiting for a value).
 %    \begin{macrocode}
-\newbool{pydata@haskey}
+\pydata@newglobalbool{pydata@haskey}
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\pydata@fhstartstate, \pydata@fhstopstate}
-% Start and stop state tracking for a file handle (|\newwrite|).  Each file handle has its own set of state bools of the form |pydata@|\meta{boolname}|@|\meta{fh}.  When a file handle is in use, the values of these bools are copied into the |pydata@|\meta{boolname} bools; when the file handle is no longer in use, |pydata@|\meta{boolname} values are copied back into |pydata@|\meta{boolname}|@|\meta{fh}.
+% \begin{macro}{\pydata@fhstartstate, \pydata@fhstopstate, \pydata@fhresetstate}
+% Start and stop state tracking for a file handle (|\newwrite|), or reset state after writing is complete.  Each file handle has its own set of state bools of the form |pydata@|\meta{boolname}|@|\meta{fh}.  When a file handle is in use, the values of these bools are copied into the |pydata@|\meta{boolname} bools; when the file handle is no longer in use, |pydata@|\meta{boolname} values are copied back into |pydata@|\meta{boolname}|@|\meta{fh}.
 %    \begin{macrocode}
 \def\pydata@fhstartstate#1{%
   \expandafter\pydata@fhstartstate@i\expandafter{\number#1}}
@@ -643,10 +671,13 @@
     \booltrue{pydata@fhnewstate}%
   \fi
   \def\do##1{%
-    \providebool{pydata@##1@#1}%
+    \pydata@provideglobalbool{pydata@##1@#1}%
     \ifbool{pydata@##1@#1}{\booltrue{pydata@##1}}{\boolfalse{pydata@##1}}}%
   \docsvlist{canwrite, hasmeta, topexists, topislist, indict, haskey}%
-  \ifbool{pydata@fhnewstate}{\booltrue{pydata@canwrite}{}}{}}
+  \ifbool{pydata@fhnewstate}%
+   {\booltrue{pydata@canwrite}}{}%
+  \ifbool{pydata@fhisreleased@#1}%
+   {\boolfalse{pydata@fhisreleased@#1}\booltrue{pydata@canwrite}}{}}
 \def\pydata@fhstopstate#1{%
   \expandafter\pydata@fhstopstate@i\expandafter{\number#1}}
 \def\pydata@fhstopstate@i#1{%
@@ -656,6 +687,12 @@
       \boolfalse{pydata@##1}}%
     \docsvlist{canwrite, hasmeta, topexists, topislist, indict, haskey}%
   \fi}
+\def\pydata@fhresetstate#1{%
+  \expandafter\pydata@fhresetstate@i\expandafter{\number#1}}
+\def\pydata@fhresetstate@i#1{%
+  \def\do##1{%
+    \boolfalse{pydata@##1@#1}}
+  \docsvlist{canwrite, hasmeta, topexists, topislist, indict, haskey}}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -664,7 +701,7 @@
 %
 % If multiple buffers are in use, all buffers use the same |pydata@bufferhaskey|.  Inconsistent state is avoided by requiring that |\pydatasetbuffername| can only be invoked when |pydata@bufferhaskey| is false.
 %    \begin{macrocode}
-\newbool{pydata@bufferhaskey}
+\pydata@newglobalbool{pydata@bufferhaskey}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -694,48 +731,61 @@
 %    \begin{macrocode}
 \def\pydatasetfilehandle#1{%
   \ifx\pydata@filehandle\relax
+  \else\ifx\pydata@filehandle#1\relax
   \else
     \pydata@fhstopstate{\pydata@filehandle}%
-  \fi
-  \let\pydata@filehandle#1\relax
-  \pydata@fhstartstate{#1}}
-\def\pydatareleasefilehandle#1{%
-  \ifx\pydata@filehandle\relax
+  \fi\fi
+  \ifx\pydata@filehandle#1\relax
   \else
-    \ifx\pydata@filehandle#1\relax
-      \pydata@fhstopstate{#1}%
-      \let\pydata@filehandle\relax
-    \fi
-  \fi
-  \ifcsname ifpydata@canwrite@\number#1\endcsname
-    \ifbool{pydata@canwrite@\number#1}%
-     {\ifbool{pydata@haskey@\number#1}%
-       {\pydata@error{Incomplete data: key is waiting for value}}{}%
-      \ifbool{pydata@indict@\number#1}%
-       {\pydata@error{Incomplete data: dict is not closed}}{}%
-      \ifbool{pydata@topislist@\number#1}%
-       {\pydata@error{Incomplete data: list is not closed}}{}}%
-    {}%
+    \let\pydata@filehandle#1\relax
+    \pydata@provideglobalbool{pydata@fhisreleased@\number#1}%
+    \pydata@fhstartstate{#1}%
   \fi}
+\def\pydatareleasefilehandle#1{%
+  \ifcsname ifpydata@canwrite@\number#1\endcsname
+  \else
+    \pydata@error{Unknown file handle #1}%
+  \fi
+  \ifx\pydata@filehandle#1\relax
+    \pydata@fhstopstate{#1}%
+    \let\pydata@filehandle\relax
+  \fi
+  \ifbool{pydata@canwrite@\number#1}%
+   {\ifbool{pydata@haskey@\number#1}%
+     {\pydata@error{Incomplete data: key is waiting for value}}{}%
+    \ifbool{pydata@indict@\number#1}%
+     {\pydata@error{Incomplete data: dict is not closed}}{}%
+    \ifbool{pydata@topislist@\number#1}%
+     {\pydata@error{Incomplete data: list is not closed}}{}}%
+   {}%
+  \pydata@fhresetstate{#1}%
+  \booltrue{pydata@fhisreleased@\number#1}}
 %    \end{macrocode}
 % \end{macro}
 %
 % \begin{macro}{\pydatasetfilename, \pydataclosefilename}
-% Shortcut for creating a |\newwrite| and then passing the file handle to |\pydatasetfilehandle|.  Automatically attempt to close the file handle (if it still exists) at the end of the document.  This isn't strictly required since \TeX\ will \href{https://tex.stackexchange.com/a/337291}{automatically close open writes}.  Invoking the close macro is necessary for basic data checking on the \LaTeX\ side.
+% Shortcut for creating a |\newwrite| and then passing the file handle to |\pydatasetfilehandle|.  File handles are global.  If the close macro is not invoked, then basic data checking on the \LaTeX\ side will not be performed.  However, \TeX\ will \href{https://tex.stackexchange.com/a/337291}{automatically close open writes at the end of the compile}.
 %    \begin{macrocode}
 \def\pydatasetfilename#1{%
   \ifcsname pydata@fh@#1\endcsname
   \else
     \expandafter\newwrite\csname pydata@fh@#1\endcsname
-    \expandafter\immediate\expandafter\openout\csname pydata@fh@#1\endcsname=#1\relax
-    \AtEndDocument{\pydataclosefilename{#1}}%
   \fi
+  \pydata@provideglobalbool{pydata@fileisopen@#1}%
+  \ifbool{pydata@fileisopen@#1}%
+   {}%
+   {\expandafter\immediate\expandafter\openout\csname pydata@fh@#1\endcsname=#1\relax
+    \booltrue{pydata@fileisopen@#1}}%
   \expandafter\pydatasetfilehandle\expandafter{\csname pydata@fh@#1\endcsname}}
 \def\pydataclosefilename#1{%
   \ifcsname pydata@fh@#1\endcsname
-    \expandafter\pydatareleasefilehandle\expandafter{\csname pydata@fh@#1\endcsname}%
-    \expandafter\immediate\expandafter\closeout\csname pydata@fh@#1\endcsname
-    \expandafter\let\csname pydata@fh@#1\endcsname\pydata@undefined
+    \ifbool{pydata@fileisopen@#1}%
+     {\expandafter\pydatareleasefilehandle\expandafter{\csname pydata@fh@#1\endcsname}%
+      \expandafter\immediate\expandafter\closeout\csname pydata@fh@#1\endcsname
+      \boolfalse{pydata@fileisopen@#1}}%
+     {}%
+  \else
+    \pydata@error{Unknown file name "#1"}%
   \fi}
 %    \end{macrocode}
 % \end{macro}

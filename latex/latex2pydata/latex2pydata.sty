@@ -20,7 +20,7 @@
 %% 
 \NeedsTeXFormat{LaTeX2e}[1999/12/01]
 \ProvidesPackage{latex2pydata}
-    [2023/11/19 v0.1 latex2pydata - write data to file in Python literal format]
+    [2024/05/12 v0.2.0.dev2 latex2pydata - write data to file in Python literal format]
 \def\pydata@error#1{%
   \PackageError{latex2pydata}{#1}{}%
   \batchmode\read -1 to \pydata@exitnow}
@@ -32,12 +32,33 @@
  {}{\pydata@error{package fvextra is outdated; upgrade to the latest version}}
 \RequirePackage{pdftexcmds}
 \def\pydata@empty{}
-\newbool{pydata@canwrite}
-\newbool{pydata@hasmeta}
-\newbool{pydata@topexists}
-\newbool{pydata@topislist}
-\newbool{pydata@indict}
-\newbool{pydata@haskey}
+\def\pydata@gnewif#1{%
+  \count@\escapechar
+  \escapechar\m@ne
+  \global\let#1\iffalse
+  \pydata@gif#1\iftrue
+  \pydata@gif#1\iffalse
+  \escapechar\count@}
+\def\pydata@gif#1#2{%
+  \expandafter\gdef\csname
+    \expandafter\@gobbletwo\string#1\expandafter\@gobbletwo\string#2\endcsname
+     {\global\let#1#2}}
+\newrobustcmd*{\pydata@newglobalbool}[1]{%
+  \begingroup
+  \let\newif\pydata@gnewif
+  \newbool{#1}%
+  \endgroup}
+\newrobustcmd*{\pydata@provideglobalbool}[1]{%
+  \begingroup
+  \let\newif\pydata@gnewif
+  \providebool{#1}%
+  \endgroup}
+\pydata@newglobalbool{pydata@canwrite}
+\pydata@newglobalbool{pydata@hasmeta}
+\pydata@newglobalbool{pydata@topexists}
+\pydata@newglobalbool{pydata@topislist}
+\pydata@newglobalbool{pydata@indict}
+\pydata@newglobalbool{pydata@haskey}
 \def\pydata@fhstartstate#1{%
   \expandafter\pydata@fhstartstate@i\expandafter{\number#1}}
 \newbool{pydata@fhnewstate}
@@ -48,10 +69,13 @@
     \booltrue{pydata@fhnewstate}%
   \fi
   \def\do##1{%
-    \providebool{pydata@##1@#1}%
+    \pydata@provideglobalbool{pydata@##1@#1}%
     \ifbool{pydata@##1@#1}{\booltrue{pydata@##1}}{\boolfalse{pydata@##1}}}%
   \docsvlist{canwrite, hasmeta, topexists, topislist, indict, haskey}%
-  \ifbool{pydata@fhnewstate}{\booltrue{pydata@canwrite}{}}{}}
+  \ifbool{pydata@fhnewstate}%
+   {\booltrue{pydata@canwrite}}{}%
+  \ifbool{pydata@fhisreleased@#1}%
+   {\boolfalse{pydata@fhisreleased@#1}\booltrue{pydata@canwrite}}{}}
 \def\pydata@fhstopstate#1{%
   \expandafter\pydata@fhstopstate@i\expandafter{\number#1}}
 \def\pydata@fhstopstate@i#1{%
@@ -61,7 +85,13 @@
       \boolfalse{pydata@##1}}%
     \docsvlist{canwrite, hasmeta, topexists, topislist, indict, haskey}%
   \fi}
-\newbool{pydata@bufferhaskey}
+\def\pydata@fhresetstate#1{%
+  \expandafter\pydata@fhresetstate@i\expandafter{\number#1}}
+\def\pydata@fhresetstate@i#1{%
+  \def\do##1{%
+    \boolfalse{pydata@##1@#1}}
+  \docsvlist{canwrite, hasmeta, topexists, topislist, indict, haskey}}
+\pydata@newglobalbool{pydata@bufferhaskey}
 \let\pydata@filehandle\relax
 \def\pydata@checkfilehandle{%
   \ifx\pydata@filehandle\relax
@@ -69,42 +99,55 @@
   \fi}
 \def\pydatasetfilehandle#1{%
   \ifx\pydata@filehandle\relax
+  \else\ifx\pydata@filehandle#1\relax
   \else
     \pydata@fhstopstate{\pydata@filehandle}%
-  \fi
-  \let\pydata@filehandle#1\relax
-  \pydata@fhstartstate{#1}}
-\def\pydatareleasefilehandle#1{%
-  \ifx\pydata@filehandle\relax
+  \fi\fi
+  \ifx\pydata@filehandle#1\relax
   \else
-    \ifx\pydata@filehandle#1\relax
-      \pydata@fhstopstate{#1}%
-      \let\pydata@filehandle\relax
-    \fi
-  \fi
-  \ifcsname ifpydata@canwrite@\number#1\endcsname
-    \ifbool{pydata@canwrite@\number#1}%
-     {\ifbool{pydata@haskey@\number#1}%
-       {\pydata@error{Incomplete data: key is waiting for value}}{}%
-      \ifbool{pydata@indict@\number#1}%
-       {\pydata@error{Incomplete data: dict is not closed}}{}%
-      \ifbool{pydata@topislist@\number#1}%
-       {\pydata@error{Incomplete data: list is not closed}}{}}%
-    {}%
+    \let\pydata@filehandle#1\relax
+    \pydata@provideglobalbool{pydata@fhisreleased@\number#1}%
+    \pydata@fhstartstate{#1}%
   \fi}
+\def\pydatareleasefilehandle#1{%
+  \ifcsname ifpydata@canwrite@\number#1\endcsname
+  \else
+    \pydata@error{Unknown file handle #1}%
+  \fi
+  \ifx\pydata@filehandle#1\relax
+    \pydata@fhstopstate{#1}%
+    \let\pydata@filehandle\relax
+  \fi
+  \ifbool{pydata@canwrite@\number#1}%
+   {\ifbool{pydata@haskey@\number#1}%
+     {\pydata@error{Incomplete data: key is waiting for value}}{}%
+    \ifbool{pydata@indict@\number#1}%
+     {\pydata@error{Incomplete data: dict is not closed}}{}%
+    \ifbool{pydata@topislist@\number#1}%
+     {\pydata@error{Incomplete data: list is not closed}}{}}%
+   {}%
+  \pydata@fhresetstate{#1}%
+  \booltrue{pydata@fhisreleased@\number#1}}
 \def\pydatasetfilename#1{%
   \ifcsname pydata@fh@#1\endcsname
   \else
     \expandafter\newwrite\csname pydata@fh@#1\endcsname
-    \expandafter\immediate\expandafter\openout\csname pydata@fh@#1\endcsname=#1\relax
-    \AtEndDocument{\pydataclosefilename{#1}}%
   \fi
+  \pydata@provideglobalbool{pydata@fileisopen@#1}%
+  \ifbool{pydata@fileisopen@#1}%
+   {}%
+   {\expandafter\immediate\expandafter\openout\csname pydata@fh@#1\endcsname=#1\relax
+    \booltrue{pydata@fileisopen@#1}}%
   \expandafter\pydatasetfilehandle\expandafter{\csname pydata@fh@#1\endcsname}}
 \def\pydataclosefilename#1{%
   \ifcsname pydata@fh@#1\endcsname
-    \expandafter\pydatareleasefilehandle\expandafter{\csname pydata@fh@#1\endcsname}%
-    \expandafter\immediate\expandafter\closeout\csname pydata@fh@#1\endcsname
-    \expandafter\let\csname pydata@fh@#1\endcsname\pydata@undefined
+    \ifbool{pydata@fileisopen@#1}%
+     {\expandafter\pydatareleasefilehandle\expandafter{\csname pydata@fh@#1\endcsname}%
+      \expandafter\immediate\expandafter\closeout\csname pydata@fh@#1\endcsname
+      \boolfalse{pydata@fileisopen@#1}}%
+     {}%
+  \else
+    \pydata@error{Unknown file name "#1"}%
   \fi}
 \newcounter{pydata@bufferindex}
 \setcounter{pydata@bufferindex}{0}
