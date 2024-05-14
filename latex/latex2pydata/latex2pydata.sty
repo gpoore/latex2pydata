@@ -20,7 +20,7 @@
 %% 
 \NeedsTeXFormat{LaTeX2e}[1999/12/01]
 \ProvidesPackage{latex2pydata}
-    [2024/05/13 v0.2.0.dev3 latex2pydata - write data to file in Python literal format]
+    [2024/05/13 v0.2.0.dev6 latex2pydata - write data to file in Python literal format]
 \def\pydata@error#1{%
   \PackageError{latex2pydata}{#1}{}%
   \batchmode\read -1 to \pydata@exitnow}
@@ -89,7 +89,7 @@
   \expandafter\pydata@fhresetstate@i\expandafter{\number#1}}
 \def\pydata@fhresetstate@i#1{%
   \def\do##1{%
-    \boolfalse{pydata@##1@#1}}
+    \boolfalse{pydata@##1@#1}}%
   \docsvlist{canwrite, hasmeta, topexists, topislist, indict, haskey}}
 \pydata@newglobalbool{pydata@bufferhaskey}
 \let\pydata@filehandle\relax

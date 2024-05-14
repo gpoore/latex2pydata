@@ -26,7 +26,7 @@
 %<package>\NeedsTeXFormat{LaTeX2e}[1999/12/01]
 %<package>\ProvidesPackage{latex2pydata}
 %<*package>
-    [2024/05/13 v0.2.0.dev5 latex2pydata - write data to file in Python literal format]
+    [2024/05/13 v0.2.0.dev6 latex2pydata - write data to file in Python literal format]
 %</package>
 %
 %<*driver>
@@ -695,7 +695,7 @@
   \expandafter\pydata@fhresetstate@i\expandafter{\number#1}}
 \def\pydata@fhresetstate@i#1{%
   \def\do##1{%
-    \boolfalse{pydata@##1@#1}}
+    \boolfalse{pydata@##1@#1}}%
   \docsvlist{canwrite, hasmeta, topexists, topislist, indict, haskey}}
 %    \end{macrocode}
 % \end{macro}
