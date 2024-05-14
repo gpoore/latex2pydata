@@ -59,8 +59,14 @@ key path unpacking.
 ## Usage
 
 The package provides two functions for loading data:
-* `load(<filehandle or pathlib.Path>, encoding='utf-8-sig')`
-* `loads(<string>)`
+
+ *  `load(<filehandle or pathlib.Path>, encoding='utf-8-sig')`
+
+ *  `loads(<string>)`
+
+Both of these functions takes optional arguments `schema: dict[str, str]` and
+`schema_missing: 'error' | 'rawstr' | 'evalany'`.  If these are provided, they
+override any schema settings in the file/string metadata.
 
 
 ## Tests

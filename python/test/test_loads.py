@@ -16,6 +16,17 @@ def test_loads_scalar_schema():
     assert latex2pydata.loads(data_str) == {"key1": 123, "key2": True, "key3": 'abc', "key4": None}
 
 
+def test_loads_scalar_schema_opt_arg():
+    data_str = textwrap.dedent('''\
+        # latex2pydata metadata: {"schema": {"key1": "int"}, "schema_missing": "rawstr"}
+        {"key1": "123", "key2": "456",}
+        ''')
+    assert latex2pydata.loads(data_str) == {"key1": 123, "key2": "456"}
+    assert latex2pydata.loads(data_str, schema_missing='evalany') == {"key1": 123, "key2": 456}
+    assert latex2pydata.loads(data_str, schema={"key2": "int"}, schema_missing='rawstr') == {"key1": "123", "key2": 456}
+    assert latex2pydata.loads(data_str, schema={"key1": "int", "key2": "int"}) == {"key1": 123, "key2": 456}
+
+
 def test_loads_collection_schema():
     data_str = textwrap.dedent('''\
         # latex2pydata metadata: {"schema": {"key1": "list[set[int|float]]"}}

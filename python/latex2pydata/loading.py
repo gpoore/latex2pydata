@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2023, Geoffrey M. Poore
+# Copyright (c) 2023-2024, Geoffrey M. Poore
 # All rights reserved.
 #
 # Licensed under the BSD 3-Clause License:
@@ -33,24 +33,28 @@ LoadedDataType = dict[str, Any] | list[dict[str, Any]]
 
 
 
-def load(readable: pathlib.Path | io.BytesIO | io.TextIOBase, encoding: str|None=None) -> LoadedDataType:
+def load(readable: pathlib.Path | io.BytesIO | io.TextIOBase,
+         encoding: str | None = None,
+         schema: dict[str, str] | None = None,
+         schema_missing: Literal['error'] | Literal['rawstr'] | Literal['evalany'] | None = None) -> LoadedDataType:
     if isinstance(readable, pathlib.Path):
         encoding = encoding or 'utf-8-sig'
-        return loads(readable.read_text(encoding=encoding))
+        return loads(readable.read_text(encoding=encoding), schema, schema_missing)
     raw_read: bytes | str = readable.read()
     if isinstance(raw_read, bytes):
         encoding = encoding or 'utf-8-sig'
-        return loads(raw_read.decode(encoding))
+        return loads(raw_read.decode(encoding), schema, schema_missing)
     if isinstance(raw_read, str):
         if encoding is not None:
             raise TypeError(f'Cannot specify encoding "{encoding}" for a readable that returns a string')
-        return loads(raw_read)
+        return loads(raw_read, schema, schema_missing)
     raise TypeError
 
 
-def loads(string: str) -> LoadedDataType:
-    schema: None | dict[str, str] = None
-    schema_missing: Literal['error'] | Literal['rawstr'] | Literal['evalany'] = 'error'
+def loads(string: str,
+          schema: dict[str, str] | None = None,
+          schema_missing: Literal['error'] | Literal['rawstr'] | Literal['evalany'] | None = None) -> LoadedDataType:
+
     if string.startswith(metadata_comment_pattern):
         metadata_str = string[len(metadata_comment_pattern):string.find('\n')].strip()
         try:
@@ -59,25 +63,27 @@ def loads(string: str) -> LoadedDataType:
             raise Latex2PydataInvalidMetadataError(f'Loading metadata failed:\n{e}')
         if not isinstance(metadata, dict):
             raise Latex2PydataInvalidMetadataError('Invalid metadata (must be a dict)')
-        if 'schema' in metadata:
+        if schema is None and 'schema' in metadata:
             schema = metadata['schema']
-            if schema is not None:
-                if not isinstance(schema, dict):
-                    raise Latex2PydataSchemaError('Invalid schema (must be dict[str, str])')
-                if not all(isinstance(k, str) and isinstance(v, str) for k, v in schema.items()):
-                    raise Latex2PydataSchemaError('Invalid schema (must be dict[str, str])')
-                schema = {k: v.replace(' ', '') for k, v in schema.items()}
-                for k, v in schema.items():
-                    if not keypath_re.fullmatch(k):
-                        raise Latex2PydataSchemaError(f'Invalid or unsupported schema key "{k}"')
-                    if not annot_re.fullmatch(v):
-                        raise Latex2PydataSchemaError(
-                            f'Invalid or unsupported schema value (type annotation) "{v}"'
-                        )
-        if 'schema_missing' in metadata:
+        if schema_missing is None and 'schema_missing' in metadata:
             schema_missing = metadata['schema_missing']
-            if schema_missing not in ('error', 'rawstr', 'evalany'):
-                raise Latex2PydataInvalidMetadataError(f'Invalid "schema_missing" value "{schema_missing}"')
+    if schema is not None:
+        if not isinstance(schema, dict):
+            raise Latex2PydataSchemaError('Invalid schema (must be dict[str, str])')
+        if not all(isinstance(k, str) and isinstance(v, str) for k, v in schema.items()):
+            raise Latex2PydataSchemaError('Invalid schema (must be dict[str, str])')
+        schema = {k: v.replace(' ', '') for k, v in schema.items()}
+        for k, v in schema.items():
+            if not keypath_re.fullmatch(k):
+                raise Latex2PydataSchemaError(f'Invalid or unsupported schema key "{k}"')
+            if not annot_re.fullmatch(v):
+                raise Latex2PydataSchemaError(
+                    f'Invalid or unsupported schema value (type annotation) "{v}"'
+                )
+    if schema_missing is None:
+        schema_missing = 'error'
+    elif schema_missing not in ('error', 'rawstr', 'evalany'):
+        raise Latex2PydataInvalidMetadataError(f'Invalid "schema_missing" value "{schema_missing}"')
 
     try:
         raw_data: RawLoadedDataType = ast.literal_eval(string)
