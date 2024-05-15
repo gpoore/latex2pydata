@@ -20,7 +20,7 @@
 %% 
 \NeedsTeXFormat{LaTeX2e}[1999/12/01]
 \ProvidesPackage{latex2pydata}
-    [2024/05/13 v0.2.0.dev6 latex2pydata - write data to file in Python literal format]
+    [2024/05/15 v0.2.0.dev7 latex2pydata - write data to file in Python literal format]
 \def\pydata@error#1{%
   \PackageError{latex2pydata}{#1}{}%
   \batchmode\read -1 to \pydata@exitnow}
@@ -168,7 +168,10 @@
   \ifnum\expandafter\value\expandafter{\pydata@bufferlengthname}<1\relax
     \pydata@error{Cannot write empty buffer}%
   \fi
-  \ifbool{pydata@indict}{}{\pydata@error{Cannot write a buffer unless in a dict}}%
+  \pydata@checkfilehandle
+  \ifbool{pydata@indict}{}{\pydata@error{Cannot write buffer unless in a dict}}%
+  \ifbool{pydata@haskey}%
+   {\pydata@error{Cannot write buffer when file has a key waiting for a value}}{}%
   \ifbool{pydata@bufferhaskey}%
    {\pydata@error{Cannot write buffer when a buffered key is waiting for a value}}{}%
   \setcounter{pydata@bufferindex}{1}%

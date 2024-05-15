@@ -20,6 +20,8 @@
 
 *  Added error messages for unknown file handles and file names.
 
+*  Added additional state and data checks in `\pydatawritebuffer`.
+
 *  Added documentation for `\pydatawritemlvaluestart`,
    `\pydatawritemlvalueline`, `\pydatawritemlvalueend`,
    `\pydatabuffermlvaluestart`, `\pydatabuffermlvalueline`,
