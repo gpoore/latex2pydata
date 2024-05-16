@@ -1,7 +1,7 @@
-# Changelog
+# Changelog — latex2pydata LaTeX package
 
 
-## v0.2.0 (dev)
+## v0.2.0 (2024-05-16)
 
 *  Operations on file handles, file names, and buffers are now global.
    This prevents errors due to groups.
