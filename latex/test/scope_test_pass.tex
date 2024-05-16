@@ -1,0 +1,130 @@
+\documentclass{article}
+
+% Engine-specific settings
+% pdftex:
+\ifcsname pdfmatch\endcsname
+    \usepackage[T1]{fontenc}
+    \usepackage[utf8]{inputenc}
+\fi
+% xetex:
+\ifcsname XeTeXinterchartoks\endcsname
+    \usepackage{fontspec}
+    \defaultfontfeatures{Ligatures=TeX}
+\fi
+% luatex:
+\ifcsname directlua\endcsname
+    \usepackage{fontspec}
+\fi
+% End engine-specific settings
+
+\usepackage{latex2pydata}
+
+\begin{document}
+
+Test.
+
+% Alternative to \pydatasetfilename:
+%\newwrite\testdata
+%\immediate\openout\testdata=\jobname.pydata\relax
+%\pydatasetfilehandle{\testdata}
+
+\begingroup
+\pydatasetfilename{\jobname.pydata}
+\endgroup
+
+\begingroup
+\pydatasetbuffername{buffer1}
+\endgroup
+\begingroup
+\pydatabufferkey{bk1.1}
+\endgroup
+\begingroup
+\pydatabuffervalue{bv1.1}
+\endgroup
+\begingroup
+\pydatabufferkeyvalue{bk1.2}{bv1.2}
+\endgroup
+\begingroup
+\pydatabufferkeyedefvalue{bk1.3}{bv1.3}
+\endgroup
+\begingroup
+\pydatabufferkey{bk1.4}
+\endgroup
+\begingroup
+\begin{pydatabuffermlvalue}
+1
+2
+\end{pydatabuffermlvalue}
+\endgroup
+\begingroup
+\pydatabufferkey{bk1.5}
+\endgroup
+\begingroup
+\begin{pydatabuffermlvalue}
+3
+4
+\end{pydatabuffermlvalue}
+\endgroup
+
+\begingroup
+\pydatasetbuffername{buffer2}
+\endgroup
+\begingroup
+\pydatabufferkey{bk2.1}
+\endgroup
+\begingroup
+\pydatabuffervalue{bv2.1}
+\endgroup
+
+\begingroup
+\pydatawritelistopen
+\endgroup
+\begingroup
+\pydatawritedictopen
+\endgroup
+\begingroup
+\pydatawritekey{k1}
+\endgroup
+\begingroup
+\pydatawritevalue{v1}
+\endgroup
+\begingroup
+\pydatawritekeyvalue{k2}{v2}
+\endgroup
+\begingroup
+\pydatawritedictclose
+\endgroup
+\begingroup
+\pydatawritedictopen
+\endgroup
+\begingroup
+\pydatasetbuffername{buffer1}
+\endgroup
+\begingroup
+\pydatawritebuffer
+\endgroup
+\begingroup
+\pydatawritedictclose
+\endgroup
+\begingroup
+\begingroup
+\pydatawritedictopen
+\endgroup
+\begingroup
+\pydatasetbuffername{buffer2}
+\endgroup
+\begingroup
+\pydatawritebuffer
+\endgroup
+\begingroup
+\pydatawritedictclose
+\endgroup
+\begingroup
+\pydatawritelistclose
+\endgroup
+\begingroup
+\pydataclosefilename{\jobname.pydata}
+\endgroup
+
+
+\end{document}

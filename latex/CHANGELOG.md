@@ -3,8 +3,8 @@
 
 ## v0.2.0 (dev)
 
-*  Bools for tracking state are now global.  This prevents state errors due
-   to groups.
+*  Operations on file handles, file names, and buffers are now global.
+   This prevents errors due to groups.
 
 *  `\pydatasetfilehandle`, `\pydatareleasefilehandle`, `\pydatasetfilename`,
    and `\pydataclosefilename` are redesigned to deal with cases where the same
@@ -17,6 +17,9 @@
 *  Added new commands `\pydatawritekeyedefvalue` and
    `\pydatabufferkeyedefvalue`.  These `\edef` the value before interpreting
    it as verbatim text.
+
+*  Simplified implementation of `pydatabuffermlvalue` environment, based on
+   latest `fvextra`.
 
 *  Added error messages for unknown file handles and file names.
 

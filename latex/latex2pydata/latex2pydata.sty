@@ -20,7 +20,7 @@
 %% 
 \NeedsTeXFormat{LaTeX2e}[1999/12/01]
 \ProvidesPackage{latex2pydata}
-    [2024/05/15 v0.2.0.dev7 latex2pydata - write data to file in Python literal format]
+    [2024/05/16 v0.2.0.dev8 latex2pydata - write data to file in Python literal format]
 \def\pydata@error#1{%
   \PackageError{latex2pydata}{#1}{}%
   \batchmode\read -1 to \pydata@exitnow}
@@ -28,7 +28,7 @@
   \PackageWarning{latex2pydata}{#1}}
 \RequirePackage{etoolbox}
 \RequirePackage{fvextra}
-\IfPackageAtLeastTF{fvextra}{2023/11/19}%
+\IfPackageAtLeastTF{fvextra}{2024/05/16}%
  {}{\pydata@error{package fvextra is outdated; upgrade to the latest version}}
 \RequirePackage{pdftexcmds}
 \def\pydata@empty{}
@@ -98,6 +98,9 @@
     \pydata@error{Undefined file handle; use \string\pydatasetfilehandle}%
   \fi}
 \def\pydatasetfilehandle#1{%
+  \if\relax\detokenize{#1}\relax
+    \pydata@error{Missing file handle}%
+  \fi
   \ifx\pydata@filehandle\relax
   \else\ifx\pydata@filehandle#1\relax
   \else
@@ -105,7 +108,7 @@
   \fi\fi
   \ifx\pydata@filehandle#1\relax
   \else
-    \let\pydata@filehandle#1\relax
+    \global\let\pydata@filehandle#1\relax
     \pydata@provideglobalbool{pydata@fhisreleased@\number#1}%
     \pydata@fhstartstate{#1}%
   \fi}
@@ -116,7 +119,7 @@
   \fi
   \ifx\pydata@filehandle#1\relax
     \pydata@fhstopstate{#1}%
-    \let\pydata@filehandle\relax
+    \global\let\pydata@filehandle\relax
   \fi
   \ifbool{pydata@canwrite@\number#1}%
    {\ifbool{pydata@haskey@\number#1}%
@@ -129,6 +132,9 @@
   \pydata@fhresetstate{#1}%
   \booltrue{pydata@fhisreleased@\number#1}}
 \def\pydatasetfilename#1{%
+  \if\relax\detokenize{#1}\relax
+    \pydata@error{Missing filename}%
+  \fi
   \ifcsname pydata@fh@#1\endcsname
   \else
     \expandafter\newwrite\csname pydata@fh@#1\endcsname
@@ -155,14 +161,13 @@
   \ifbool{pydata@bufferhaskey}%
    {\pydata@error{Cannot change buffers when a buffered key is waiting for a value}}%
    {}%
-  \def\pydata@buffername{#1}%
-  \def\pydata@bufferlinename{#1line}%
-  \def\pydata@bufferlengthname{#1length}%
+  \gdef\pydata@buffername{#1}%
+  \gdef\pydata@bufferlinename{#1line}%
+  \gdef\pydata@bufferlengthname{#1length}%
   \ifcsname c@\pydata@bufferlengthname\endcsname
   \else
     \expandafter\newcounter\expandafter{\pydata@bufferlengthname}%
-  \fi
-  \expandafter\setcounter\expandafter{\pydata@bufferlengthname}{0}}
+  \fi}
 \pydatasetbuffername{pydata@defaultbuffer}
 \def\pydatawritebuffer{%
   \ifnum\expandafter\value\expandafter{\pydata@bufferlengthname}<1\relax
@@ -190,7 +195,7 @@
   \fi
   \setcounter{pydata@bufferindex}{1}%
   \loop\unless\ifnum\value{pydata@bufferindex}>\value{#1length}\relax
-    \expandafter\let
+    \expandafter\global\expandafter\let
       \csname#1line\arabic{pydata@bufferindex}\endcsname\pydata@undefined
     \stepcounter{pydata@bufferindex}%
   \repeat
@@ -257,7 +262,7 @@
   \else
     \pydata@error{Invalid schema missing setting #1}%
   \fi
-  \def\pydata@schemamissing{#1}}
+  \gdef\pydata@schemamissing{#1}}
 \pydatasetschemamissing{error}
 \begingroup
 \catcode`\:=12\relax
@@ -269,7 +274,7 @@
     \pydata@schema\pydata@quotestr{#1}: \pydata@quotestr{#2}, }}
 \endgroup
 \def\pydataclearschema{%
-  \def\pydata@schema{}}
+  \gdef\pydata@schema{}}
 \def\pydataclearmeta{%
   \pydatasetschemamissing{error}%
   \pydataclearschema}
@@ -368,7 +373,7 @@
   \ifbool{pydata@bufferhaskey}%
    {\pydata@error{Cannot buffer a key when waiting for a value}}{}%
   \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\edef\csname
+  \expandafter\xdef\csname
     \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
     \endcsname{%
       \pydata@quotestr{#1}:%
@@ -391,7 +396,7 @@
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
   \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\edef\csname
+  \expandafter\xdef\csname
     \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
     \endcsname{%
       \pydata@quotestr{#1},%
@@ -426,7 +431,7 @@
   \ifbool{pydata@bufferhaskey}%
    {\pydata@error{Cannot buffer a key when waiting for a value}}{}%
   \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\edef\csname
+  \expandafter\xdef\csname
     \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
     \endcsname{%
       \pydata@quotestr{#1}: \pydata@quotestr{#2},%
@@ -461,7 +466,7 @@
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
   \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\edef\csname
+  \expandafter\xdef\csname
     \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
     \endcsname{%
       \pydata@mlstropen
@@ -470,7 +475,7 @@
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
   \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\edef\csname
+  \expandafter\xdef\csname
     \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
     \endcsname{%
       \pydata@escstrtext{#1}%
@@ -479,7 +484,7 @@
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
   \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\edef\csname
+  \expandafter\xdef\csname
     \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
     \endcsname{%
       \pydata@mlstrclose,%
@@ -494,21 +499,9 @@
 \AfterEndEnvironment{pydatawritemlvalue}{\pydatawritemlvalueend}
 \newenvironment{pydatabuffermlvalue}%
  {\VerbatimEnvironment
-  \begin{VerbatimBuffer}[buffername=pydata@tmpbuffer, globalbuffer=true]}%
- {\end{VerbatimBuffer}}
-\AfterEndEnvironment{pydatabuffermlvalue}{%
   \pydatabuffermlvaluestart
-  \setcounter{pydata@bufferindex}{1}%
-  \loop\unless\ifnum\value{pydata@bufferindex}>\value{pydata@tmpbufferlength}\relax
-    \expandafter\let\expandafter\pydata@tmpbufferline
-      \csname pydata@tmpbufferline\arabic{pydata@bufferindex}\endcsname
-    \expandafter\let
-      \csname pydata@tmpbufferline\arabic{pydata@bufferindex}\endcsname\pydata@undefined
-    \expandafter\pydatabuffermlvalueline\expandafter{\pydata@tmpbufferline}%
-    \stepcounter{pydata@bufferindex}%
-  \repeat
-  \setcounter{pydata@tmpbufferlength}{0}%
-  \setcounter{pydata@bufferindex}{0}%
+  \begin{VerbatimBuffer}[bufferer=\pydatabuffermlvalueline]}%
+ {\end{VerbatimBuffer}%
   \pydatabuffermlvalueend}
 %% \Finale
 \endinput

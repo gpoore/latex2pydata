@@ -26,7 +26,7 @@
 %<package>\NeedsTeXFormat{LaTeX2e}[1999/12/01]
 %<package>\ProvidesPackage{latex2pydata}
 %<*package>
-    [2024/05/15 v0.2.0.dev7 latex2pydata - write data to file in Python literal format]
+    [2024/05/16 v0.2.0.dev8 latex2pydata - write data to file in Python literal format]
 %</package>
 %
 %<*driver>
@@ -348,6 +348,8 @@
 %
 % \subsection{File handling}
 %
+% All file handling commands operate globally (|\global|, |\gdef|, etc.).
+%
 % \DescMacro{\pydatasetfilehandle\marg{filehandle}}
 % Configure writing to file using an existing file handle created with |\newwrite|.  This allows manual management of the file handle.  For example:
 % \begin{Verbatim}[gobble=2]
@@ -360,6 +362,8 @@
 % \end{Verbatim}
 %
 % To switch from one file handle to another, simply use |\pydatasetfilehandle| with the new file handle.  When the file handle is no longer in use, |\pydatareleasefilehandle| is recommended (but not required) to remove references to the file handle and perform basic checking for incomplete or malformed data written to file.
+%
+% |\pydatasetfilehandle| sets the file handle globally.
 %
 % \DescMacro{\pydatareleasefilehandle\marg{filehandle}}
 % When a file handle is no longer needed, remove references to it.  Also perform basic checking for incomplete or malformed data written to file.
@@ -374,6 +378,8 @@
 % This is not designed for manual management of the file handle.  The file does not have to be closed manually since this will happen automatically at the end of the document.  However, using |\pydataclosefilename|\marg{filename} is recommended since it closes the file immediately and also performs basic checking for incomplete or malformed data written to file.
 %
 % To switch from one file to another, simply use |\pydatasetfilename| with the new filename.  When the file is no longer in use, |\pydataclosefilename| is recommended.
+%
+% |\pydatasetfilename| sets the filename globally.
 %
 % \DescMacro{\pydataclosefilename\marg{filename}}
 % Close a file previously opened with |\pydatasetfilename|.  Also perform basic checking for incomplete or malformed data written to file.
@@ -478,6 +484,8 @@
 %
 % A buffer consists of a sequence of macros of the form |\|\meta{buffername}|line|\meta{n}, where each line of data corresponds to a macro and \meta{n} is an integer greater than or equal to one (one-based indexing).  The length of the buffer is stored in the counter \meta{buffername}|length|.  Buffers are limited to containing comma-separated key-value data, without any opening or closing dict delimiters |{}|.
 %
+% All buffer commands that set the buffer or modify the buffer operate globally (|\global|, |\gdef|, etc.).
+%
 %
 % \subsubsection{Creating and deleting buffers}
 %
@@ -570,7 +578,7 @@
 %    \begin{macrocode}
 \RequirePackage{etoolbox}
 \RequirePackage{fvextra}
-\IfPackageAtLeastTF{fvextra}{2023/11/19}%
+\IfPackageAtLeastTF{fvextra}{2024/05/16}%
  {}{\pydata@error{package fvextra is outdated; upgrade to the latest version}}
 \RequirePackage{pdftexcmds}
 %    \end{macrocode}
@@ -734,6 +742,9 @@
 % Set and release file handle.  Release isn't strictly required, but it is necessary for basic data checking on the \LaTeX\ side.
 %    \begin{macrocode}
 \def\pydatasetfilehandle#1{%
+  \if\relax\detokenize{#1}\relax
+    \pydata@error{Missing file handle}%
+  \fi
   \ifx\pydata@filehandle\relax
   \else\ifx\pydata@filehandle#1\relax
   \else
@@ -741,7 +752,7 @@
   \fi\fi
   \ifx\pydata@filehandle#1\relax
   \else
-    \let\pydata@filehandle#1\relax
+    \global\let\pydata@filehandle#1\relax
     \pydata@provideglobalbool{pydata@fhisreleased@\number#1}%
     \pydata@fhstartstate{#1}%
   \fi}
@@ -752,7 +763,7 @@
   \fi
   \ifx\pydata@filehandle#1\relax
     \pydata@fhstopstate{#1}%
-    \let\pydata@filehandle\relax
+    \global\let\pydata@filehandle\relax
   \fi
   \ifbool{pydata@canwrite@\number#1}%
    {\ifbool{pydata@haskey@\number#1}%
@@ -771,6 +782,9 @@
 % Shortcut for creating a |\newwrite| and then passing the file handle to |\pydatasetfilehandle|.  File handles are global.  If the close macro is not invoked, then basic data checking on the \LaTeX\ side will not be performed.  However, \TeX\ will \href{https://tex.stackexchange.com/a/337291}{automatically close open writes at the end of the compile}.
 %    \begin{macrocode}
 \def\pydatasetfilename#1{%
+  \if\relax\detokenize{#1}\relax
+    \pydata@error{Missing filename}%
+  \fi
   \ifcsname pydata@fh@#1\endcsname
   \else
     \expandafter\newwrite\csname pydata@fh@#1\endcsname
@@ -817,14 +831,13 @@
   \ifbool{pydata@bufferhaskey}%
    {\pydata@error{Cannot change buffers when a buffered key is waiting for a value}}%
    {}%
-  \def\pydata@buffername{#1}%
-  \def\pydata@bufferlinename{#1line}%
-  \def\pydata@bufferlengthname{#1length}%
+  \gdef\pydata@buffername{#1}%
+  \gdef\pydata@bufferlinename{#1line}%
+  \gdef\pydata@bufferlengthname{#1length}%
   \ifcsname c@\pydata@bufferlengthname\endcsname
   \else
     \expandafter\newcounter\expandafter{\pydata@bufferlengthname}%
-  \fi
-  \expandafter\setcounter\expandafter{\pydata@bufferlengthname}{0}}
+  \fi}
 \pydatasetbuffername{pydata@defaultbuffer}
 %    \end{macrocode}
 % \end{macro}
@@ -865,7 +878,7 @@
   \fi
   \setcounter{pydata@bufferindex}{1}%
   \loop\unless\ifnum\value{pydata@bufferindex}>\value{#1length}\relax
-    \expandafter\let
+    \expandafter\global\expandafter\let
       \csname#1line\arabic{pydata@bufferindex}\endcsname\pydata@undefined
     \stepcounter{pydata@bufferindex}%
   \repeat
@@ -989,7 +1002,7 @@
   \else
     \pydata@error{Invalid schema missing setting #1}%
   \fi
-  \def\pydata@schemamissing{#1}}
+  \gdef\pydata@schemamissing{#1}}
 \pydatasetschemamissing{error}
 %    \end{macrocode}
 % \end{macro}
@@ -1013,7 +1026,7 @@
 % Delete existing schema.  This isn't done automatically upon writing so that a schema can be defined and then reused.
 %    \begin{macrocode}
 \def\pydataclearschema{%
-  \def\pydata@schema{}}
+  \gdef\pydata@schema{}}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1152,7 +1165,7 @@
   \ifbool{pydata@bufferhaskey}%
    {\pydata@error{Cannot buffer a key when waiting for a value}}{}%
   \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\edef\csname
+  \expandafter\xdef\csname
     \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
     \endcsname{%
       \pydata@quotestr{#1}:%
@@ -1181,7 +1194,7 @@
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
   \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\edef\csname
+  \expandafter\xdef\csname
     \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
     \endcsname{%
       \pydata@quotestr{#1},%
@@ -1222,7 +1235,7 @@
   \ifbool{pydata@bufferhaskey}%
    {\pydata@error{Cannot buffer a key when waiting for a value}}{}%
   \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\edef\csname
+  \expandafter\xdef\csname
     \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
     \endcsname{%
       \pydata@quotestr{#1}: \pydata@quotestr{#2},%
@@ -1264,7 +1277,7 @@
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
   \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\edef\csname
+  \expandafter\xdef\csname
     \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
     \endcsname{%
       \pydata@mlstropen
@@ -1273,7 +1286,7 @@
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
   \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\edef\csname
+  \expandafter\xdef\csname
     \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
     \endcsname{%
       \pydata@escstrtext{#1}%
@@ -1282,7 +1295,7 @@
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
   \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\edef\csname
+  \expandafter\xdef\csname
     \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
     \endcsname{%
       \pydata@mlstrclose,%
@@ -1307,21 +1320,9 @@
 %    \begin{macrocode}
 \newenvironment{pydatabuffermlvalue}%
  {\VerbatimEnvironment
-  \begin{VerbatimBuffer}[buffername=pydata@tmpbuffer, globalbuffer=true]}%
- {\end{VerbatimBuffer}}
-\AfterEndEnvironment{pydatabuffermlvalue}{%
   \pydatabuffermlvaluestart
-  \setcounter{pydata@bufferindex}{1}%
-  \loop\unless\ifnum\value{pydata@bufferindex}>\value{pydata@tmpbufferlength}\relax
-    \expandafter\let\expandafter\pydata@tmpbufferline
-      \csname pydata@tmpbufferline\arabic{pydata@bufferindex}\endcsname
-    \expandafter\let
-      \csname pydata@tmpbufferline\arabic{pydata@bufferindex}\endcsname\pydata@undefined
-    \expandafter\pydatabuffermlvalueline\expandafter{\pydata@tmpbufferline}%
-    \stepcounter{pydata@bufferindex}%
-  \repeat
-  \setcounter{pydata@tmpbufferlength}{0}%
-  \setcounter{pydata@bufferindex}{0}%
+  \begin{VerbatimBuffer}[bufferer=\pydatabuffermlvalueline]}%
+ {\end{VerbatimBuffer}%
   \pydatabuffermlvalueend}
 %    \end{macrocode}
 % \end{macro}
