@@ -4,7 +4,7 @@
 # All rights reserved.
 #
 # Licensed under the BSD 3-Clause License:
-# http://opensource.org/licenses/BSD-3-Clause
+# https://opensource.org/license/BSD-3-Clause
 #
 
 
