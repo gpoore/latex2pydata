@@ -1,7 +1,7 @@
 # Changelog — latex2pydata Python package
 
 
-## v0.3.0 (dev)
+## v0.3.0 (2024-06-03)
 
 *  Modified type hints for compatibility with Python >= 3.9.  Previously used
    Python 3.10 notation for Union and Optional types.  Modified
