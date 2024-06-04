@@ -14,7 +14,7 @@ import ast
 import io
 import pathlib
 import re
-from typing import Any, Literal, Union
+from typing import Any, Literal
 from .err import Latex2PydataInvalidMetadataError, Latex2PydataSchemaError, Latex2PydataInvalidDataError
 from .schema import annot_re, validator_dict
 
@@ -27,16 +27,13 @@ key_pattern = r'[A-Za-z_][0-9A-Za-z_]*'
 keypath_pattern = rf'{key_pattern}(?:\.{key_pattern})*'
 keypath_re = re.compile(keypath_pattern)
 
-RawLoadedDataType = Union[dict[str, str], list[dict[str, str]]]
-LoadedDataType = Union[dict[str, Any], list[dict[str, Any]]]
-
 
 
 
 def load(readable: pathlib.Path | io.BytesIO | io.TextIOBase,
          encoding: str | None = None,
          schema: dict[str, str] | None = None,
-         schema_missing: Literal['error'] | Literal['rawstr'] | Literal['evalany'] | None = None) -> LoadedDataType:
+         schema_missing: Literal['error'] | Literal['rawstr'] | Literal['evalany'] | None = None) -> dict[str, Any] | list[dict[str, Any]]:
     if isinstance(readable, pathlib.Path):
         encoding = encoding or 'utf-8-sig'
         return loads(readable.read_text(encoding=encoding), schema, schema_missing)
@@ -53,7 +50,7 @@ def load(readable: pathlib.Path | io.BytesIO | io.TextIOBase,
 
 def loads(string: str,
           schema: dict[str, str] | None = None,
-          schema_missing: Literal['error'] | Literal['rawstr'] | Literal['evalany'] | None = None) -> LoadedDataType:
+          schema_missing: Literal['error'] | Literal['rawstr'] | Literal['evalany'] | None = None) -> dict[str, Any] | list[dict[str, Any]]:
 
     if string.startswith(metadata_comment_pattern):
         metadata_str = string[len(metadata_comment_pattern):string.find('\n')].strip()
@@ -86,7 +83,7 @@ def loads(string: str,
         raise Latex2PydataInvalidMetadataError(f'Invalid "schema_missing" value "{schema_missing}"')
 
     try:
-        raw_data: RawLoadedDataType = ast.literal_eval(string)
+        raw_data: dict[str, str] | list[dict[str, str]] = ast.literal_eval(string)
     except Exception as e:
         raise Latex2PydataInvalidDataError(f'Loading data with ast.literal_eval() failed:\n{e}')
     top_is_list: bool
