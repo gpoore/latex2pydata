@@ -1,7 +1,7 @@
 # Changelog — latex2pydata Python package
 
 
-## v0.4.0 (dev)
+## v0.4.0 (2024-06-04)
 
 *  Replaced type definitions with type annotations for compatibility with
    Python 3.8.  Switched back to v0.2.0 type annotations, since they
