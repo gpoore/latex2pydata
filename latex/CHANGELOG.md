@@ -1,6 +1,13 @@
 # Changelog — latex2pydata LaTeX package
 
 
+## v0.3.0 (dev)
+
+*  Replaced buffer length counters with macros to prevent issues with
+   `\includeonly` resetting counters.
+
+
+
 ## v0.2.0 (2024-05-16)
 
 *  Operations on file handles, file names, and buffers are now global.
@@ -32,6 +39,7 @@
 
 *  Updated `tcblisting` usage in docs for compatibility with the latest
    `tcolorbox`.
+
 
 
 ## v0.1.0 (2023-11-19)

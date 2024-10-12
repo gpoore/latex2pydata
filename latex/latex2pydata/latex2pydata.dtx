@@ -26,7 +26,7 @@
 %<package>\NeedsTeXFormat{LaTeX2e}[1999/12/01]
 %<package>\ProvidesPackage{latex2pydata}
 %<*package>
-    [2024/05/16 v0.2.0 latex2pydata - write data to file in Python literal format]
+    [2024/10/12 v0.3.0dev1 latex2pydata - write data to file in Python literal format]
 %</package>
 %
 %<*driver>
@@ -482,7 +482,7 @@
 %
 % Key-value data can be written to file once a dict is opened with |\pydatawritedictopen|. It is also possible to accumulate key-value data in a ``buffer.''  This is convenient when the data serves as input to an external program that generates cached content.  Buffered data can be hashed in memory without being written to file, so the existence of cached content can be checked efficiently.
 %
-% A buffer consists of a sequence of macros of the form |\|\meta{buffername}|line|\meta{n}, where each line of data corresponds to a macro and \meta{n} is an integer greater than or equal to one (one-based indexing).  The length of the buffer is stored in the counter \meta{buffername}|length|.  Buffers are limited to containing comma-separated key-value data, without any opening or closing dict delimiters |{}|.
+% A buffer consists of a sequence of macros of the form |\|\meta{buffername}|line|\meta{n}, where each line of data corresponds to a macro and \meta{n} is an integer greater than or equal to one (one-based indexing).  The length of the buffer is stored in the macro |\|\meta{buffername}|length|.  Buffers are limited to containing comma-separated key-value data, without any opening or closing dict delimiters |{}|.
 %
 % All buffer commands that set the buffer or modify the buffer operate globally (|\global|, |\gdef|, etc.).
 %
@@ -492,10 +492,10 @@
 % \DescMacro{\pydatasetbuffername\marg{buffername}}
 % Initialize a new buffer if \meta{buffername} has not been used previously, and configure all buffer operations to use \meta{buffername}.
 %
-% \meta{buffername} is used as a base name for creating the buffer line macros of the form |\|\meta{buffername}|line|\meta{n} and the buffer length counter \meta{buffername}|length|.
+% \meta{buffername} is used as a base name for creating the buffer line macros of the form |\|\meta{buffername}|line|\meta{n} and the buffer length macro |\|\meta{buffername}|length|.
 %
 % \DescMacro{\pydataclearbuffername\marg{buffername}}
-% Delete the specified buffer.  |\let| all line macros |\|\meta{buffername}|line|\meta{n} to an undefined macro, and set the length counter \meta{buffername}|length| to zero.
+% Delete the specified buffer.  |\let| all line macros |\|\meta{buffername}|line|\meta{n} to an undefined macro, and set the length macro |\|\meta{buffername}|length| to zero.
 %
 %
 % \subsubsection{Special buffer operations}
@@ -814,7 +814,7 @@
 %
 % Key-value data can be written directly to file once a dict is opened.  It is also possible to accumulate key-value data in a ``buffer.''  This is convenient when the data serves as input to an external program that generates cached content.  Buffered data can be hashed in memory without being written to file, so the existence of cached content can be checked efficiently.
 %
-% The buffer consists of a sequence of macros of the form |\<buffer_name>line<n>|, where each line of data corresponds to a macro and |<n>| is an integer greater than or equal to one.  The length of the buffer is stored in the counter |<buffer_name>length|.  The buffer includes comma-separated key-value data, without any opening or closing dict delimiters |{}|.
+% The buffer consists of a sequence of macros of the form |\<buffer_name>line<n>|, where each line of data corresponds to a macro and |<n>| is an integer greater than or equal to one.  The length of the buffer is stored in the macro |\<buffer_name>length|.  The buffer includes comma-separated key-value data, without any opening or closing dict delimiters |{}|.
 %
 % \begin{macro}{pydata@bufferindex}
 % Counter for looping through buffers.
@@ -824,8 +824,8 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\pydatasetbuffername, \pydata@buffername, \pydata@bufferlinename, \pydata@bufferlengthname}
-% Set the buffer base name and create a corresponding length counter if it does not exist.
+% \begin{macro}{\pydatasetbuffername, \pydata@buffername, \pydata@bufferlinename, \pydata@bufferlengthname, \pydata@bufferlengthmacro}
+% Set the buffer base name and create a corresponding length macro if it does not exist.
 %    \begin{macrocode}
 \def\pydatasetbuffername#1{%
   \ifbool{pydata@bufferhaskey}%
@@ -834,10 +834,12 @@
   \gdef\pydata@buffername{#1}%
   \gdef\pydata@bufferlinename{#1line}%
   \gdef\pydata@bufferlengthname{#1length}%
-  \ifcsname c@\pydata@bufferlengthname\endcsname
+  \ifcsname\pydata@bufferlengthname\endcsname
   \else
-    \expandafter\newcounter\expandafter{\pydata@bufferlengthname}%
-  \fi}
+    \expandafter\gdef\csname\pydata@bufferlengthname\endcsname{0}%
+  \fi
+  \expandafter\gdef\expandafter\pydata@bufferlengthmacro\expandafter{%
+    \csname\pydata@bufferlengthname\endcsname}}
 \pydatasetbuffername{pydata@defaultbuffer}
 %    \end{macrocode}
 % \end{macro}
@@ -846,7 +848,7 @@
 % Write existing buffer macros to file handle.
 %    \begin{macrocode}
 \def\pydatawritebuffer{%
-  \ifnum\expandafter\value\expandafter{\pydata@bufferlengthname}<1\relax
+  \ifnum\pydata@bufferlengthmacro<1\relax
     \pydata@error{Cannot write empty buffer}%
   \fi
   \pydata@checkfilehandle
@@ -856,8 +858,7 @@
   \ifbool{pydata@bufferhaskey}%
    {\pydata@error{Cannot write buffer when a buffered key is waiting for a value}}{}%
   \setcounter{pydata@bufferindex}{1}%
-  \loop\unless\ifnum\value{pydata@bufferindex}>%
-      \expandafter\value\expandafter{\pydata@bufferlengthname}\relax
+  \loop\unless\ifnum\value{pydata@bufferindex}>\pydata@bufferlengthmacro\relax
     \immediate\write\pydata@filehandle{%
       \csname\pydata@bufferlinename\arabic{pydata@bufferindex}\endcsname}%
     \stepcounter{pydata@bufferindex}%
@@ -872,17 +873,17 @@
 %    \begin{macrocode}
 \def\pydataclearbuffername#1{%
   \def\pydata@clearbuffername{#1}%
-  \ifcsname c@#1length\endcsname
+  \ifcsname#1length\endcsname
   \else
     \pydata@error{Buffer #1 does not exist}%
   \fi
   \setcounter{pydata@bufferindex}{1}%
-  \loop\unless\ifnum\value{pydata@bufferindex}>\value{#1length}\relax
+  \loop\unless\ifnum\value{pydata@bufferindex}>\csname#1length\endcsname\relax
     \expandafter\global\expandafter\let
       \csname#1line\arabic{pydata@bufferindex}\endcsname\pydata@undefined
     \stepcounter{pydata@bufferindex}%
   \repeat
-  \setcounter{#1length}{0}%
+  \expandafter\gdef\csname#1length\endcsname{0}%
   \setcounter{pydata@bufferindex}{0}%
   \ifx\pydata@clearbuffername\pydata@buffername
     \boolfalse{pydata@bufferhaskey}%
@@ -896,7 +897,7 @@
 %    \begin{macrocode}
 \def\pydatabuffermdfivesum{%
   \pdf@mdfivesum{%
-    \ifnum\expandafter\value\expandafter{\pydata@bufferlengthname}<1
+    \ifnum\pydata@bufferlengthmacro<1
       \expandafter\@firstoftwo
     \else
       \expandafter\@secondoftwo
@@ -904,12 +905,12 @@
     {}{\pydatabuffermdfivesum@i{1}}}}
 \def\pydatabuffermdfivesum@i#1{%
   \csname\pydata@bufferlinename#1\endcsname^^J%
-  \ifnum\expandafter\value\expandafter{\pydata@bufferlengthname}=#1
+  \ifnum\pydata@bufferlengthmacro=#1
     \expandafter\@gobble
   \else
     \expandafter\@firstofone
   \fi
-  {\expandafter\pydatabuffermdfivesum@i\expandafter{\the\numexpr#1+1 }}}
+  {\expandafter\pydatabuffermdfivesum@i\expandafter{\the\numexpr#1+1\relax}}}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1164,10 +1165,9 @@
 \gdef\pydatabufferkey@i#1{%
   \ifbool{pydata@bufferhaskey}%
    {\pydata@error{Cannot buffer a key when waiting for a value}}{}%
-  \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\xdef\csname
-    \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
-    \endcsname{%
+  \expandafter\xdef\pydata@bufferlengthmacro{%
+    \the\numexpr\pydata@bufferlengthmacro+1\relax}%
+  \expandafter\xdef\csname\pydata@bufferlinename\pydata@bufferlengthmacro\endcsname{%
       \pydata@quotestr{#1}:%
     }%
   \booltrue{pydata@bufferhaskey}}
@@ -1193,10 +1193,9 @@
 \gdef\pydatabuffervalue@i#1{%
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
-  \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\xdef\csname
-    \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
-    \endcsname{%
+  \expandafter\xdef\pydata@bufferlengthmacro{%
+    \the\numexpr\pydata@bufferlengthmacro+1\relax}%
+  \expandafter\xdef\csname\pydata@bufferlinename\pydata@bufferlengthmacro\endcsname{%
       \pydata@quotestr{#1},%
     }%
   \boolfalse{pydata@bufferhaskey}}
@@ -1234,10 +1233,9 @@
 \gdef\pydatabufferkeyvalue@ii#1#2{%
   \ifbool{pydata@bufferhaskey}%
    {\pydata@error{Cannot buffer a key when waiting for a value}}{}%
-  \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\xdef\csname
-    \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
-    \endcsname{%
+  \expandafter\xdef\pydata@bufferlengthmacro{%
+    \the\numexpr\pydata@bufferlengthmacro+1\relax}%
+  \expandafter\xdef\csname\pydata@bufferlinename\pydata@bufferlengthmacro\endcsname{%
       \pydata@quotestr{#1}: \pydata@quotestr{#2},%
     }}
 \gdef\pydatabufferkeyedefvalue{%
@@ -1276,28 +1274,25 @@
 \gdef\pydatabuffermlvaluestart{%
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
-  \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\xdef\csname
-    \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
-    \endcsname{%
+  \expandafter\xdef\pydata@bufferlengthmacro{%
+    \the\numexpr\pydata@bufferlengthmacro+1\relax}%
+  \expandafter\xdef\csname\pydata@bufferlinename\pydata@bufferlengthmacro\endcsname{%
       \pydata@mlstropen
     }}
 \gdef\pydatabuffermlvalueline#1{%
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
-  \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\xdef\csname
-    \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
-    \endcsname{%
+  \expandafter\xdef\pydata@bufferlengthmacro{%
+    \the\numexpr\pydata@bufferlengthmacro+1\relax}%
+  \expandafter\xdef\csname\pydata@bufferlinename\pydata@bufferlengthmacro\endcsname{%
       \pydata@escstrtext{#1}%
     }}
 \gdef\pydatabuffermlvalueend{%
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
-  \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\xdef\csname
-    \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
-    \endcsname{%
+  \expandafter\xdef\pydata@bufferlengthmacro{%
+    \the\numexpr\pydata@bufferlengthmacro+1\relax}%
+  \expandafter\xdef\csname\pydata@bufferlinename\pydata@bufferlengthmacro\endcsname{%
       \pydata@mlstrclose,%
     }%
   \boolfalse{pydata@bufferhaskey}}

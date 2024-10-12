@@ -20,7 +20,7 @@
 %% 
 \NeedsTeXFormat{LaTeX2e}[1999/12/01]
 \ProvidesPackage{latex2pydata}
-    [2024/05/16 v0.2.0 latex2pydata - write data to file in Python literal format]
+    [2024/10/12 v0.3.0dev1 latex2pydata - write data to file in Python literal format]
 \def\pydata@error#1{%
   \PackageError{latex2pydata}{#1}{}%
   \batchmode\read -1 to \pydata@exitnow}
@@ -164,13 +164,15 @@
   \gdef\pydata@buffername{#1}%
   \gdef\pydata@bufferlinename{#1line}%
   \gdef\pydata@bufferlengthname{#1length}%
-  \ifcsname c@\pydata@bufferlengthname\endcsname
+  \ifcsname\pydata@bufferlengthname\endcsname
   \else
-    \expandafter\newcounter\expandafter{\pydata@bufferlengthname}%
-  \fi}
+    \expandafter\gdef\csname\pydata@bufferlengthname\endcsname{0}%
+  \fi
+  \expandafter\gdef\expandafter\pydata@bufferlengthmacro\expandafter{%
+    \csname\pydata@bufferlengthname\endcsname}}
 \pydatasetbuffername{pydata@defaultbuffer}
 \def\pydatawritebuffer{%
-  \ifnum\expandafter\value\expandafter{\pydata@bufferlengthname}<1\relax
+  \ifnum\pydata@bufferlengthmacro<1\relax
     \pydata@error{Cannot write empty buffer}%
   \fi
   \pydata@checkfilehandle
@@ -180,8 +182,7 @@
   \ifbool{pydata@bufferhaskey}%
    {\pydata@error{Cannot write buffer when a buffered key is waiting for a value}}{}%
   \setcounter{pydata@bufferindex}{1}%
-  \loop\unless\ifnum\value{pydata@bufferindex}>%
-      \expandafter\value\expandafter{\pydata@bufferlengthname}\relax
+  \loop\unless\ifnum\value{pydata@bufferindex}>\pydata@bufferlengthmacro\relax
     \immediate\write\pydata@filehandle{%
       \csname\pydata@bufferlinename\arabic{pydata@bufferindex}\endcsname}%
     \stepcounter{pydata@bufferindex}%
@@ -189,24 +190,24 @@
   \setcounter{pydata@bufferindex}{0}}
 \def\pydataclearbuffername#1{%
   \def\pydata@clearbuffername{#1}%
-  \ifcsname c@#1length\endcsname
+  \ifcsname#1length\endcsname
   \else
     \pydata@error{Buffer #1 does not exist}%
   \fi
   \setcounter{pydata@bufferindex}{1}%
-  \loop\unless\ifnum\value{pydata@bufferindex}>\value{#1length}\relax
+  \loop\unless\ifnum\value{pydata@bufferindex}>\csname#1length\endcsname\relax
     \expandafter\global\expandafter\let
       \csname#1line\arabic{pydata@bufferindex}\endcsname\pydata@undefined
     \stepcounter{pydata@bufferindex}%
   \repeat
-  \setcounter{#1length}{0}%
+  \expandafter\gdef\csname#1length\endcsname{0}%
   \setcounter{pydata@bufferindex}{0}%
   \ifx\pydata@clearbuffername\pydata@buffername
     \boolfalse{pydata@bufferhaskey}%
   \fi}
 \def\pydatabuffermdfivesum{%
   \pdf@mdfivesum{%
-    \ifnum\expandafter\value\expandafter{\pydata@bufferlengthname}<1
+    \ifnum\pydata@bufferlengthmacro<1
       \expandafter\@firstoftwo
     \else
       \expandafter\@secondoftwo
@@ -214,12 +215,12 @@
     {}{\pydatabuffermdfivesum@i{1}}}}
 \def\pydatabuffermdfivesum@i#1{%
   \csname\pydata@bufferlinename#1\endcsname^^J%
-  \ifnum\expandafter\value\expandafter{\pydata@bufferlengthname}=#1
+  \ifnum\pydata@bufferlengthmacro=#1
     \expandafter\@gobble
   \else
     \expandafter\@firstofone
   \fi
-  {\expandafter\pydatabuffermdfivesum@i\expandafter{\the\numexpr#1+1 }}}
+  {\expandafter\pydatabuffermdfivesum@i\expandafter{\the\numexpr#1+1\relax}}}
 \begingroup
 \catcode`\"=12\relax
 \begingroup
@@ -372,10 +373,9 @@
 \gdef\pydatabufferkey@i#1{%
   \ifbool{pydata@bufferhaskey}%
    {\pydata@error{Cannot buffer a key when waiting for a value}}{}%
-  \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\xdef\csname
-    \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
-    \endcsname{%
+  \expandafter\xdef\pydata@bufferlengthmacro{%
+    \the\numexpr\pydata@bufferlengthmacro+1\relax}%
+  \expandafter\xdef\csname\pydata@bufferlinename\pydata@bufferlengthmacro\endcsname{%
       \pydata@quotestr{#1}:%
     }%
   \booltrue{pydata@bufferhaskey}}
@@ -395,10 +395,9 @@
 \gdef\pydatabuffervalue@i#1{%
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
-  \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\xdef\csname
-    \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
-    \endcsname{%
+  \expandafter\xdef\pydata@bufferlengthmacro{%
+    \the\numexpr\pydata@bufferlengthmacro+1\relax}%
+  \expandafter\xdef\csname\pydata@bufferlinename\pydata@bufferlengthmacro\endcsname{%
       \pydata@quotestr{#1},%
     }%
   \boolfalse{pydata@bufferhaskey}}
@@ -430,10 +429,9 @@
 \gdef\pydatabufferkeyvalue@ii#1#2{%
   \ifbool{pydata@bufferhaskey}%
    {\pydata@error{Cannot buffer a key when waiting for a value}}{}%
-  \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\xdef\csname
-    \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
-    \endcsname{%
+  \expandafter\xdef\pydata@bufferlengthmacro{%
+    \the\numexpr\pydata@bufferlengthmacro+1\relax}%
+  \expandafter\xdef\csname\pydata@bufferlinename\pydata@bufferlengthmacro\endcsname{%
       \pydata@quotestr{#1}: \pydata@quotestr{#2},%
     }}
 \gdef\pydatabufferkeyedefvalue{%
@@ -465,28 +463,25 @@
 \gdef\pydatabuffermlvaluestart{%
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
-  \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\xdef\csname
-    \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
-    \endcsname{%
+  \expandafter\xdef\pydata@bufferlengthmacro{%
+    \the\numexpr\pydata@bufferlengthmacro+1\relax}%
+  \expandafter\xdef\csname\pydata@bufferlinename\pydata@bufferlengthmacro\endcsname{%
       \pydata@mlstropen
     }}
 \gdef\pydatabuffermlvalueline#1{%
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
-  \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\xdef\csname
-    \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
-    \endcsname{%
+  \expandafter\xdef\pydata@bufferlengthmacro{%
+    \the\numexpr\pydata@bufferlengthmacro+1\relax}%
+  \expandafter\xdef\csname\pydata@bufferlinename\pydata@bufferlengthmacro\endcsname{%
       \pydata@escstrtext{#1}%
     }}
 \gdef\pydatabuffermlvalueend{%
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
-  \expandafter\stepcounter\expandafter{\pydata@bufferlengthname}%
-  \expandafter\xdef\csname
-    \pydata@bufferlinename\expandafter\arabic\expandafter{\pydata@bufferlengthname}%
-    \endcsname{%
+  \expandafter\xdef\pydata@bufferlengthmacro{%
+    \the\numexpr\pydata@bufferlengthmacro+1\relax}%
+  \expandafter\xdef\csname\pydata@bufferlinename\pydata@bufferlengthmacro\endcsname{%
       \pydata@mlstrclose,%
     }%
   \boolfalse{pydata@bufferhaskey}}
