@@ -1,7 +1,7 @@
 # Changelog — latex2pydata LaTeX package
 
 
-## v0.3.0 (dev)
+## v0.3.0 (2024/10/16)
 
 *  Replaced buffer length counters with macros to prevent issues with
    `\includeonly` resetting counters.
