@@ -26,7 +26,7 @@
 %<package>\NeedsTeXFormat{LaTeX2e}[1999/12/01]
 %<package>\ProvidesPackage{latex2pydata}
 %<*package>
-    [2024/10/16 v0.3.0 latex2pydata - write data to file in Python literal format]
+    [2024/11/17 v0.4.0dev1 latex2pydata - write data to file in Python literal format]
 %</package>
 %
 %<*driver>
@@ -816,11 +816,10 @@
 %
 % The buffer consists of a sequence of macros of the form |\<buffer_name>line<n>|, where each line of data corresponds to a macro and |<n>| is an integer greater than or equal to one.  The length of the buffer is stored in the macro |\<buffer_name>length|.  The buffer includes comma-separated key-value data, without any opening or closing dict delimiters |{}|.
 %
-% \begin{macro}{pydata@bufferindex}
-% Counter for looping through buffers.
+% \begin{macro}{\pydata@bufferindex}
+% Macro for looping through buffers.
 %    \begin{macrocode}
-\newcounter{pydata@bufferindex}
-\setcounter{pydata@bufferindex}{0}
+\def\pydata@bufferindex{0}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -857,13 +856,13 @@
    {\pydata@error{Cannot write buffer when file has a key waiting for a value}}{}%
   \ifbool{pydata@bufferhaskey}%
    {\pydata@error{Cannot write buffer when a buffered key is waiting for a value}}{}%
-  \setcounter{pydata@bufferindex}{1}%
-  \loop\unless\ifnum\value{pydata@bufferindex}>\pydata@bufferlengthmacro\relax
+  \gdef\pydata@bufferindex{1}%
+  \loop\unless\ifnum\pydata@bufferindex>\pydata@bufferlengthmacro\relax
     \immediate\write\pydata@filehandle{%
-      \csname\pydata@bufferlinename\arabic{pydata@bufferindex}\endcsname}%
-    \stepcounter{pydata@bufferindex}%
+      \csname\pydata@bufferlinename\pydata@bufferindex\endcsname}%
+    \xdef\pydata@bufferindex{\the\numexpr\pydata@bufferindex+1\relax}%
   \repeat
-  \setcounter{pydata@bufferindex}{0}}
+  \gdef\pydata@bufferindex{0}}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -877,14 +876,14 @@
   \else
     \pydata@error{Buffer #1 does not exist}%
   \fi
-  \setcounter{pydata@bufferindex}{1}%
-  \loop\unless\ifnum\value{pydata@bufferindex}>\csname#1length\endcsname\relax
+  \gdef\pydata@bufferindex{1}%
+  \loop\unless\ifnum\pydata@bufferindex>\csname#1length\endcsname\relax
     \expandafter\global\expandafter\let
-      \csname#1line\arabic{pydata@bufferindex}\endcsname\pydata@undefined
-    \stepcounter{pydata@bufferindex}%
+      \csname#1line\pydata@bufferindex\endcsname\pydata@undefined
+    \xdef\pydata@bufferindex{\the\numexpr\pydata@bufferindex+1\relax}%
   \repeat
   \expandafter\gdef\csname#1length\endcsname{0}%
-  \setcounter{pydata@bufferindex}{0}%
+  \gdef\pydata@bufferindex{0}%
   \ifx\pydata@clearbuffername\pydata@buffername
     \boolfalse{pydata@bufferhaskey}%
   \fi}

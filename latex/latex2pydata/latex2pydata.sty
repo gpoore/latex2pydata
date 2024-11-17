@@ -20,7 +20,7 @@
 %% 
 \NeedsTeXFormat{LaTeX2e}[1999/12/01]
 \ProvidesPackage{latex2pydata}
-    [2024/10/16 v0.3.0 latex2pydata - write data to file in Python literal format]
+    [2024/11/17 v0.4.0dev1 latex2pydata - write data to file in Python literal format]
 \def\pydata@error#1{%
   \PackageError{latex2pydata}{#1}{}%
   \batchmode\read -1 to \pydata@exitnow}
@@ -155,8 +155,7 @@
   \else
     \pydata@error{Unknown file name "#1"}%
   \fi}
-\newcounter{pydata@bufferindex}
-\setcounter{pydata@bufferindex}{0}
+\def\pydata@bufferindex{0}
 \def\pydatasetbuffername#1{%
   \ifbool{pydata@bufferhaskey}%
    {\pydata@error{Cannot change buffers when a buffered key is waiting for a value}}%
@@ -181,27 +180,27 @@
    {\pydata@error{Cannot write buffer when file has a key waiting for a value}}{}%
   \ifbool{pydata@bufferhaskey}%
    {\pydata@error{Cannot write buffer when a buffered key is waiting for a value}}{}%
-  \setcounter{pydata@bufferindex}{1}%
-  \loop\unless\ifnum\value{pydata@bufferindex}>\pydata@bufferlengthmacro\relax
+  \gdef\pydata@bufferindex{1}%
+  \loop\unless\ifnum\pydata@bufferindex>\pydata@bufferlengthmacro\relax
     \immediate\write\pydata@filehandle{%
-      \csname\pydata@bufferlinename\arabic{pydata@bufferindex}\endcsname}%
-    \stepcounter{pydata@bufferindex}%
+      \csname\pydata@bufferlinename\pydata@bufferindex\endcsname}%
+    \xdef\pydata@bufferindex{\the\numexpr\pydata@bufferindex+1\relax}%
   \repeat
-  \setcounter{pydata@bufferindex}{0}}
+  \gdef\pydata@bufferindex{0}}
 \def\pydataclearbuffername#1{%
   \def\pydata@clearbuffername{#1}%
   \ifcsname#1length\endcsname
   \else
     \pydata@error{Buffer #1 does not exist}%
   \fi
-  \setcounter{pydata@bufferindex}{1}%
-  \loop\unless\ifnum\value{pydata@bufferindex}>\csname#1length\endcsname\relax
+  \gdef\pydata@bufferindex{1}%
+  \loop\unless\ifnum\pydata@bufferindex>\csname#1length\endcsname\relax
     \expandafter\global\expandafter\let
-      \csname#1line\arabic{pydata@bufferindex}\endcsname\pydata@undefined
-    \stepcounter{pydata@bufferindex}%
+      \csname#1line\pydata@bufferindex\endcsname\pydata@undefined
+    \xdef\pydata@bufferindex{\the\numexpr\pydata@bufferindex+1\relax}%
   \repeat
   \expandafter\gdef\csname#1length\endcsname{0}%
-  \setcounter{pydata@bufferindex}{0}%
+  \gdef\pydata@bufferindex{0}%
   \ifx\pydata@clearbuffername\pydata@buffername
     \boolfalse{pydata@bufferhaskey}%
   \fi}

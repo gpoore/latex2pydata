@@ -1,6 +1,14 @@
 # Changelog — latex2pydata LaTeX package
 
 
+## v0.4.0 (dev)
+
+*  Replaced buffer index counter with a macro to prevent issues with commands
+   and environments such as `\text` from `amsmath` that modify counter
+   behavior.
+
+
+
 ## v0.3.0 (2024/10/16)
 
 *  Replaced buffer length counters with macros to prevent issues with
