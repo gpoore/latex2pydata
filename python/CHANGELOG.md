@@ -1,6 +1,12 @@
 # Changelog — latex2pydata Python package
 
 
+## v0.4.1 (2024-11-24)
+
+*  `pyproject.toml`:  explicitly set `build-backend` (#1).
+
+
+
 ## v0.4.0 (2024-06-04)
 
 *  Replaced type definitions with type annotations for compatibility with
