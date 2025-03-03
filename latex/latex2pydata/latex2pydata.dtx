@@ -27,7 +27,7 @@
 %<package>\NeedsTeXFormat{LaTeX2e}[1999/12/01]
 %<package>\ProvidesPackage{latex2pydata}
 %<*package>
-    [2025/03/03 v0.5.0dev1 latex2pydata - write data to file in Python literal format]
+    [2025/03/03 v0.5.0dev2 latex2pydata - write data to file in Python literal format]
 %</package>
 %
 %<*driver>
@@ -472,11 +472,11 @@
 %
 % This environment uses \fvextra\ and \fancyvrb\ internally to capture the environment contents verbatim.  If a new environment is defined as a wrapper for |pydatawritemlvalue|, then |\VerbatimEnvironment| must be used at the beginning of the new environment definition.  This configures \fancyvrb\ to find the end of the new environment correctly.
 %
-% \DescMacro{\pydatawritemlvaluestart}
+% \DescMacro{\pydatawritemlvalueopen}
 %
 % \DescMacro{\pydatawritemlvalueline\marg{line}}
 %
-% \DescMacro{\pydatawritemlvalueend}
+% \DescMacro{\pydatawritemlvalueclose}
 % These commands allow writing a multi-line value to file one line at a time.  \meta{line} is interpreted verbatim.
 %
 %
@@ -537,11 +537,11 @@
 %
 % This environment uses \fvextra\ and \fancyvrb\ internally to capture the environment contents verbatim.  If a new environment is defined as a wrapper for |pydatabuffermlvalue|, then |\VerbatimEnvironment| must be used at the beginning of the new environment definition.  This configures \fancyvrb\ to find the end of the new environment correctly.
 %
-% \DescMacro{\pydatabuffermlvaluestart}
+% \DescMacro{\pydatabuffermlvalueopen}
 %
 % \DescMacro{\pydatabuffermlvalueline\marg{line}}
 %
-% \DescMacro{\pydatabuffermlvalueend}
+% \DescMacro{\pydatabuffermlvalueclose}
 % These commands allow buffering a multi-line value one line at a time.  \meta{line} is interpreted verbatim.
 %
 %
@@ -1252,12 +1252,12 @@
 % \end{macro}
 %
 %
-% \begin{macro}{\pydatawritemlvaluestart, \pydatawritemlvalueline, \pydatawritemlvalueend, \pydatabuffermlvaluestart, \pydatabuffermlvalueline, \pydatabuffermlvalueend}
+% \begin{macro}{\pydatawritemlvalueopen, \pydatawritemlvalueline, \pydatawritemlvalueclose, \pydatabuffermlvalueopen, \pydatabuffermlvalueline, \pydatabuffermlvalueclose}
 %  Write a line of a multi-line value to file or append it to the buffer.  Write the end delimiter of the value to file or append it to the buffer.
 %    \begin{macrocode}
 \begingroup
 \catcode`\,=12\relax
-\gdef\pydatawritemlvaluestart{%
+\gdef\pydatawritemlvalueopen{%
   \ifbool{pydata@haskey}{}{\pydata@error{Cannot write value when waiting for a key}}%
   \immediate\write\pydata@filehandle{%
     \pydata@mlstropen
@@ -1267,13 +1267,13 @@
   \immediate\write\pydata@filehandle{%
     \pydata@escstrtext{#1}%
   }}
-\gdef\pydatawritemlvalueend{%
+\gdef\pydatawritemlvalueclose{%
   \ifbool{pydata@haskey}{}{\pydata@error{Cannot write value when waiting for a key}}%
   \immediate\write\pydata@filehandle{%
     \pydata@mlstrclose,%
   }%
   \boolfalse{pydata@haskey}}
-\gdef\pydatabuffermlvaluestart{%
+\gdef\pydatabuffermlvalueopen{%
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
   \expandafter\xdef\pydata@bufferlengthmacro{%
@@ -1289,7 +1289,7 @@
   \expandafter\xdef\csname\pydata@bufferlinename\pydata@bufferlengthmacro\endcsname{%
       \pydata@escstrtext{#1}%
     }}
-\gdef\pydatabuffermlvalueend{%
+\gdef\pydatabuffermlvalueclose{%
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
   \expandafter\xdef\pydata@bufferlengthmacro{%
@@ -1300,16 +1300,23 @@
   \boolfalse{pydata@bufferhaskey}}
 \endgroup
 %    \end{macrocode}
+% |*start| and |*end| variants for backward compatibility with versions before v0.5.0.
+%    \begin{macrocode}
+\let\pydatawritemlvaluestart\pydatawritemlvalueopen
+\let\pydatawritemlvalueend\pydatawritemlvalueclose
+\let\pydatabuffermlvaluestart\pydatabuffermlvalueopen
+\let\pydatabuffermlvalueend\pydatabuffermlvalueclose
+%    \end{macrocode}
 % \end{macro}
 %
 % \begin{macro}{pydatawritemlvalue}
 %    \begin{macrocode}
 \newenvironment{pydatawritemlvalue}%
  {\VerbatimEnvironment
-  \pydatawritemlvaluestart
+  \pydatawritemlvalueopen
   \begin{VerbatimWrite}[writer=\pydatawritemlvalueline]}%
  {\end{VerbatimWrite}}
-\AfterEndEnvironment{pydatawritemlvalue}{\pydatawritemlvalueend}
+\AfterEndEnvironment{pydatawritemlvalue}{\pydatawritemlvalueclose}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1317,10 +1324,10 @@
 %    \begin{macrocode}
 \newenvironment{pydatabuffermlvalue}%
  {\VerbatimEnvironment
-  \pydatabuffermlvaluestart
+  \pydatabuffermlvalueopen
   \begin{VerbatimBuffer}[bufferer=\pydatabuffermlvalueline]}%
  {\end{VerbatimBuffer}%
-  \pydatabuffermlvalueend}
+  \pydatabuffermlvalueclose}
 %    \end{macrocode}
 % \end{macro}
 %

@@ -7,6 +7,11 @@
 
 *  Improved schema documentation.
 
+*  Renamed `*mlvaluestart` macros to `*mlvalueopen` and renamed `*mlvalueend`
+   macros to `*mlvalueclose`, so that `mlvalue` macros are consistent with
+   `dict` and `list` macros for handling opening/closing delimiters.  The old
+   macros are retained for now for backward compatibility.
+
 
 
 ## v0.4.0 (2024/11/17)

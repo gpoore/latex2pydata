@@ -20,7 +20,7 @@
 %% 
 \NeedsTeXFormat{LaTeX2e}[1999/12/01]
 \ProvidesPackage{latex2pydata}
-    [2025/03/03 v0.5.0dev1 latex2pydata - write data to file in Python literal format]
+    [2025/03/03 v0.5.0dev2 latex2pydata - write data to file in Python literal format]
 \def\pydata@error#1{%
   \PackageError{latex2pydata}{#1}{}%
   \batchmode\read -1 to \pydata@exitnow}
@@ -443,7 +443,7 @@
 \endgroup
 \begingroup
 \catcode`\,=12\relax
-\gdef\pydatawritemlvaluestart{%
+\gdef\pydatawritemlvalueopen{%
   \ifbool{pydata@haskey}{}{\pydata@error{Cannot write value when waiting for a key}}%
   \immediate\write\pydata@filehandle{%
     \pydata@mlstropen
@@ -453,13 +453,13 @@
   \immediate\write\pydata@filehandle{%
     \pydata@escstrtext{#1}%
   }}
-\gdef\pydatawritemlvalueend{%
+\gdef\pydatawritemlvalueclose{%
   \ifbool{pydata@haskey}{}{\pydata@error{Cannot write value when waiting for a key}}%
   \immediate\write\pydata@filehandle{%
     \pydata@mlstrclose,%
   }%
   \boolfalse{pydata@haskey}}
-\gdef\pydatabuffermlvaluestart{%
+\gdef\pydatabuffermlvalueopen{%
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
   \expandafter\xdef\pydata@bufferlengthmacro{%
@@ -475,7 +475,7 @@
   \expandafter\xdef\csname\pydata@bufferlinename\pydata@bufferlengthmacro\endcsname{%
       \pydata@escstrtext{#1}%
     }}
-\gdef\pydatabuffermlvalueend{%
+\gdef\pydatabuffermlvalueclose{%
   \ifbool{pydata@bufferhaskey}%
    {}{\pydata@error{Cannot buffer value when waiting for a key}}%
   \expandafter\xdef\pydata@bufferlengthmacro{%
@@ -485,18 +485,22 @@
     }%
   \boolfalse{pydata@bufferhaskey}}
 \endgroup
+\let\pydatawritemlvaluestart\pydatawritemlvalueopen
+\let\pydatawritemlvalueend\pydatawritemlvalueclose
+\let\pydatabuffermlvaluestart\pydatabuffermlvalueopen
+\let\pydatabuffermlvalueend\pydatabuffermlvalueclose
 \newenvironment{pydatawritemlvalue}%
  {\VerbatimEnvironment
-  \pydatawritemlvaluestart
+  \pydatawritemlvalueopen
   \begin{VerbatimWrite}[writer=\pydatawritemlvalueline]}%
  {\end{VerbatimWrite}}
-\AfterEndEnvironment{pydatawritemlvalue}{\pydatawritemlvalueend}
+\AfterEndEnvironment{pydatawritemlvalue}{\pydatawritemlvalueclose}
 \newenvironment{pydatabuffermlvalue}%
  {\VerbatimEnvironment
-  \pydatabuffermlvaluestart
+  \pydatabuffermlvalueopen
   \begin{VerbatimBuffer}[bufferer=\pydatabuffermlvalueline]}%
  {\end{VerbatimBuffer}%
-  \pydatabuffermlvalueend}
+  \pydatabuffermlvalueclose}
 %% \Finale
 \endinput
 %%
