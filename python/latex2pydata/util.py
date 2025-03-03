@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2023-2024, Geoffrey M. Poore
+# Copyright (c) 2023-2025, Geoffrey M. Poore
 # All rights reserved.
 #
 # Licensed under the BSD 3-Clause License:
@@ -17,7 +17,7 @@ from typing import Any, Callable
 class KeyDefaultDict(collections.defaultdict):
     '''
     Default dict that passes missing keys to the factory function, rather than
-    calling the factory function with no collection_arguments.
+    calling the factory function with no arguments.
     '''
     __init__: Callable[[Callable[[Any], Any]], None]
     default_factory: Callable[[Any], Any]
