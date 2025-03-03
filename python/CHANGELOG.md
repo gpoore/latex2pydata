@@ -1,6 +1,18 @@
 # Changelog — latex2pydata Python package
 
 
+## v0.5.0 (dev)
+
+*  Renamed schema missing setting `rawstr` to `verbatim`.
+
+*  Added schema support for `Any` type.  Added schema support for `verbatim`
+   type, which keeps the string value received from LaTeX without any
+   interpretation.
+
+*  Improved schema documentation.
+
+
+
 ## v0.4.1 (2024-11-24)
 
 *  `pyproject.toml`:  explicitly set `build-backend` (#1).

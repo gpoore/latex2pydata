@@ -20,6 +20,7 @@ from .util import KeyDefaultDict
 
 
 annot_scalars: dict[str, Type] = {
+    'Any': object,  # This also functions as an arbitrary collection type
     'bool': bool,
     'bytes': bytes,
     'float': float,
@@ -66,6 +67,9 @@ annot_re = re.compile(annot_any_pattern)
 
 
 def validator_factory(annot: str) -> Callable[[str], bool]:
+    # This only deals with native Python type annotations.  The special
+    # `verbatim` type annotation defined by latex2pydata is handled separately
+    # during data loading.
     if '[' not in annot:
         try:
             scalar_types = [annot_scalars[s] for s in annot.split('|')]

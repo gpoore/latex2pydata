@@ -1,4 +1,4 @@
-# latex2pydata - load data from LaTeX in Python literal format
+# latex2pydata – load data from LaTeX in Python literal format
 
 The latex2pydata Python package is designed to load data in
 [Python literal format](https://docs.python.org/3/reference/lexical_analysis.html#literals)
@@ -12,9 +12,10 @@ Raw data is loaded with
 `list[dict[str,str]]`.  Then data is postprocessed to apply any schemas and to unpack key paths.
 
 * The LaTeX package allows schemas to be defined using Python type annotation
-  syntax.  When a schema exists, string values are evaluated with
-  `ast.literal_eval()`, and then the data type of each result is checked
-  against the schema.
+  syntax.  Schemas are communicated within a special latex2pydata metadata
+  comment at the very beginning of data files.  When a schema exists, string
+  values are evaluated with `ast.literal_eval()`, and then the data type of
+  each result is checked against the schema.
 
 * All dict keys are required to match the regex `[A-Za-z_][0-9A-Za-z_]*`.
   Periods in keys are interpreted as key paths and indicate sub-dicts.  For
@@ -23,6 +24,14 @@ Raw data is loaded with
 
 
 ## Schema support
+
+The following scalar data types are supported in schemas:  `bool`, `bytes`,
+`float`, `int`, `None`, `str`, and `tuple`.  The following collection types
+are supported:  `dict`, `list`, and `set`.  `Any` is supported for scalars and
+for collections (subscripting `Any[...]` is not supported for collections).
+There is also a `verbatim` data type that is defined specifically for
+latex2pydata.  This keeps the string data received from LaTeX verbatim,
+without any interpretation by `ast.literal_eval()`.
 
 The current parser for Python type annotation syntax is basic and limits the
 supported schema data types:
@@ -65,8 +74,8 @@ The package provides two functions for loading data:
  *  `loads(<string>)`
 
 Both of these functions takes optional arguments `schema: dict[str, str]` and
-`schema_missing: 'error' | 'rawstr' | 'evalany'`.  If these are provided, they
-override any schema settings in the file/string metadata.
+`schema_missing: 'error' | 'verbatim' | 'evalany'`.  If these are provided,
+they override any schema settings in the file/string metadata.
 
 
 ## Tests

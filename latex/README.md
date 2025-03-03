@@ -1,4 +1,4 @@
-# `latex2pydata` - write data to file in Python literal format
+# `latex2pydata` – write data to file in Python literal format
 
 `latex2pydata` is a [LaTeX](https://www.latex-project.org/) package for
 writing data to file using

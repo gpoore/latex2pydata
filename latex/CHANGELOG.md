@@ -1,6 +1,14 @@
 # Changelog — latex2pydata LaTeX package
 
 
+## v0.5.0 (dev)
+
+*  Renamed schema missing setting `rawstr` to `verbatim`.
+
+*  Improved schema documentation.
+
+
+
 ## v0.4.0 (2024/11/17)
 
 *  Replaced buffer index counter with a macro to prevent issues with commands

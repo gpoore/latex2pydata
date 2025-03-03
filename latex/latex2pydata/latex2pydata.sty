@@ -8,7 +8,7 @@
 %% 
 %% This is a generated file.
 %% 
-%% Copyright (C) 2023-2024 by Geoffrey M. Poore <gpoore@gmail.com>
+%% Copyright (C) 2023-2025 by Geoffrey M. Poore <gpoore@gmail.com>
 %% --------------------------------------------------------------------------
 %% This work may be distributed and/or modified under the
 %% conditions of the LaTeX Project Public License, either version 1.3c
@@ -20,7 +20,7 @@
 %% 
 \NeedsTeXFormat{LaTeX2e}[1999/12/01]
 \ProvidesPackage{latex2pydata}
-    [2024/11/17 v0.4.0 latex2pydata - write data to file in Python literal format]
+    [2025/03/03 v0.5.0dev1 latex2pydata - write data to file in Python literal format]
 \def\pydata@error#1{%
   \PackageError{latex2pydata}{#1}{}%
   \batchmode\read -1 to \pydata@exitnow}
@@ -255,7 +255,7 @@
 \endgroup
 \def\pydata@schema{}
 \let\pydata@schemamissing@error\relax
-\let\pydata@schemamissing@rawstr\relax
+\let\pydata@schemamissing@verbatim\relax
 \let\pydata@schemamissing@evalany\relax
 \def\pydatasetschemamissing#1{%
   \ifcsname pydata@schemamissing@\detokenize{#1}\endcsname

@@ -1,4 +1,4 @@
-# `latex2pydata` - send data from LaTeX to Python using Python literal format
+# `latex2pydata` – send data from LaTeX to Python using Python literal format
 
 
 `latex2pydata` allows [LaTeX](https://www.latex-project.org/) to save data to

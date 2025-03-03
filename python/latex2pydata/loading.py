@@ -33,7 +33,7 @@ keypath_re = re.compile(keypath_pattern)
 def load(readable: pathlib.Path | io.BytesIO | io.TextIOBase,
          encoding: str | None = None,
          schema: dict[str, str] | None = None,
-         schema_missing: Literal['error'] | Literal['rawstr'] | Literal['evalany'] | None = None) -> dict[str, Any] | list[dict[str, Any]]:
+         schema_missing: Literal['error'] | Literal['verbatim'] | Literal['evalany'] | None = None) -> dict[str, Any] | list[dict[str, Any]]:
     if isinstance(readable, pathlib.Path):
         encoding = encoding or 'utf-8-sig'
         return loads(readable.read_text(encoding=encoding), schema, schema_missing)
@@ -50,7 +50,7 @@ def load(readable: pathlib.Path | io.BytesIO | io.TextIOBase,
 
 def loads(string: str,
           schema: dict[str, str] | None = None,
-          schema_missing: Literal['error'] | Literal['rawstr'] | Literal['evalany'] | None = None) -> dict[str, Any] | list[dict[str, Any]]:
+          schema_missing: Literal['error'] | Literal['verbatim'] | Literal['evalany'] | None = None) -> dict[str, Any] | list[dict[str, Any]]:
 
     if string.startswith(metadata_comment_pattern):
         metadata_str = string[len(metadata_comment_pattern):string.find('\n')].strip()
@@ -73,13 +73,13 @@ def loads(string: str,
         for k, v in schema.items():
             if not keypath_re.fullmatch(k):
                 raise Latex2PydataSchemaError(f'Invalid or unsupported schema key "{k}"')
-            if not annot_re.fullmatch(v):
+            if v != 'verbatim' and not annot_re.fullmatch(v):
                 raise Latex2PydataSchemaError(
                     f'Invalid or unsupported schema value (type annotation) "{v}"'
                 )
     if schema_missing is None:
         schema_missing = 'error'
-    elif schema_missing not in ('error', 'rawstr', 'evalany'):
+    elif schema_missing not in ('error', 'verbatim', 'evalany'):
         raise Latex2PydataInvalidMetadataError(f'Invalid "schema_missing" value "{schema_missing}"')
 
     try:
@@ -118,15 +118,19 @@ def loads(string: str,
             if schema is None:
                 v = raw_v
             elif raw_k in schema:
-                try:
-                    v = ast.literal_eval(raw_v)
-                except Exception as e:
-                    raise Latex2PydataInvalidDataError(f'Invalid value for key "{raw_k}":\n{e}')
-                if not validator_dict[schema[raw_k]](v):
-                    raise Latex2PydataInvalidDataError(f'Key "{raw_k}" should have value with type "{schema[raw_k]}"')
+                value_type_annot = schema[raw_k]
+                if value_type_annot == 'verbatim':
+                    v = raw_v
+                else:
+                    try:
+                        v = ast.literal_eval(raw_v)
+                    except Exception as e:
+                        raise Latex2PydataInvalidDataError(f'Invalid value for key "{raw_k}":\n{e}')
+                    if not validator_dict[value_type_annot](v):
+                        raise Latex2PydataInvalidDataError(f'Key "{raw_k}" should have value with type "{value_type_annot}"')
             elif schema_missing == 'error':
                 raise Latex2PydataInvalidDataError(f'Key "{raw_k}" is missing a schema entry')
-            elif schema_missing == 'rawstr':
+            elif schema_missing == 'verbatim':
                 v = raw_v
             elif schema_missing == 'evalany':
                 try:

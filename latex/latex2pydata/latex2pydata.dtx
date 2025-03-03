@@ -1,6 +1,7 @@
 % \iffalse meta-comment
+% !TEX TS-program = pdflatexmk
 %
-% Copyright (C) 2023-2024 by Geoffrey M. Poore <gpoore@gmail.com>
+% Copyright (C) 2023-2025 by Geoffrey M. Poore <gpoore@gmail.com>
 % ---------------------------------------------------------------------------
 % This work may be distributed and/or modified under the
 % conditions of the LaTeX Project Public License, either version 1.3c
@@ -26,7 +27,7 @@
 %<package>\NeedsTeXFormat{LaTeX2e}[1999/12/01]
 %<package>\ProvidesPackage{latex2pydata}
 %<*package>
-    [2024/11/17 v0.4.0 latex2pydata - write data to file in Python literal format]
+    [2025/03/03 v0.5.0dev1 latex2pydata - write data to file in Python literal format]
 %</package>
 %
 %<*driver>
@@ -387,20 +388,22 @@
 %
 % \subsection{Metadata}
 %
-% \pkg{latex2pydata} optionally supports writing metadata to file, including basic schema definitions for values.  When data is loaded with the \pydatapy, the schema is used to perform type conversion and type checking.  When a schema definition exists for a given value, the value is initially loaded as a string, and then (for non-string data types) it is evaluated with \astliteval.  An error is raised if this process does not result in an object with the data type specified in the schema.
+% \pkg{latex2pydata} optionally supports writing metadata to file, including basic schema definitions for values.  When data is loaded with the \pydatapy, the schema is used to perform type conversion and type checking.  When a schema definition exists for a given value, the value is initially loaded as a string, and then it is evaluated with \astliteval.  An error is raised if this process does not result in an object with the data type specified in the schema.
 %
 % \DescMacro{\pydatasetschemamissing\marg{missing behavior}}
 % This determines how the schema is processed when the schema is missing definitions for one or more key-value pairs.  Options for \meta{missing behavior}:
 % \begin{itemize}
 % \item |error| (default):  If a schema is defined then a complete schema is required.  That is, a schema definition must exist for all key-value pairs or an error is raised.
-% \item |rawstr|:  The schema is enforced for all key-value pairs for which it is defined, and any other key-value pairs are kept with string values.  These string values are the raw verbatim text passed from \LaTeX.
-% \item |evalany|:  The schema is enforced for all key-value pairs for which it is defined, and any other key-value pairs have the value evaluated with \astliteval, with all value data types being permitted.  Because all values without a schema definition are evaluated, any string values without a schema definition must be quoted and escaped as strings on the \LaTeX\ side.
+% \item |verbatim|:  The schema is enforced for all key-value pairs for which it is defined, and any other key-value pairs are kept with string values.  These string values are the raw verbatim text passed from \LaTeX.
+% \item |evalany|:  The schema is enforced for all key-value pairs for which it is defined, and any other key-value pairs have the value evaluated with \astliteval, with all value data types being permitted.  Because all values without a schema definition are evaluated, any string values without a schema definition must be quoted and escaped as Python strings on the \LaTeX\ side.
 % \end{itemize}
 %
 % \DescMacro{\pydatasetschemakeytype\marg{key}\marg{value type}}
-% Define a key's schema.  For example, |\pydatasetschemakeytype{key}{int}|.
+% Define a key's schema.  For example, |\pydatasetschemakeytype{key}{int}|.  The value is initially loaded as a string, and then this is evaluated with \astliteval.  An error is raised if this process does not result in an object with the specified data type.  \meta{value type} should be a standard Python type annotation, such as |list[int]| or |dict[str, float]|.  To keep a string value received from \LaTeX\ verbatim without any evaluation, use the special |verbatim| type.
 %
-% \meta{value type} should be a standard Python type annotation, such as |list[int]| or |dict[str, float]|.  See the \pydatapy\ documentation for information about value data types that are currently supported.
+% The following scalar data types are supported:  |bool|, |bytes|, |float|, |int|, |None|, |str|, and |tuple|.  The following collection types are supported:  |dict|, |list|, and |set|.  |Any| is supported for scalars and for collections (subscripting |Any[...]| is not supported for collections).  There is also a |verbatim| data type that is defined specifically for \pkg{latex2pydata}.  This keeps the string data received from \LaTeX\ verbatim, without any interpretation by \astliteval.
+%
+% See the \pydatapy\ documentation for more details.
 %
 % \DescMacro{\pydataclearschema}
 % Delete the existing schema.  If the schema is not deleted, it can be reused across multiple output files.
@@ -995,7 +998,7 @@
 % Define behavior for missing key-value pairs in a schema.
 %    \begin{macrocode}
 \let\pydata@schemamissing@error\relax
-\let\pydata@schemamissing@rawstr\relax
+\let\pydata@schemamissing@verbatim\relax
 \let\pydata@schemamissing@evalany\relax
 \def\pydatasetschemamissing#1{%
   \ifcsname pydata@schemamissing@\detokenize{#1}\endcsname
