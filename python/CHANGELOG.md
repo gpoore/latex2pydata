@@ -1,7 +1,7 @@
 # Changelog — latex2pydata Python package
 
 
-## v0.5.0 (dev)
+## v0.5.0 (2025-03-03)
 
 *  Renamed schema missing setting `rawstr` to `verbatim`.  `rawstr` is still
    accepted for backward compatibility.
