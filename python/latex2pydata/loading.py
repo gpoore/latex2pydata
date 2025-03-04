@@ -77,6 +77,9 @@ def loads(string: str,
                 raise Latex2PydataSchemaError(
                     f'Invalid or unsupported schema value (type annotation) "{v}"'
                 )
+    if schema_missing == 'rawstr':
+        # Backward compatibility for < v0.5.0
+        schema_missing = 'verbatim'
     if schema_missing is None:
         schema_missing = 'error'
     elif schema_missing not in ('error', 'verbatim', 'evalany'):

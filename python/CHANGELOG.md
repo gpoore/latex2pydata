@@ -3,7 +3,8 @@
 
 ## v0.5.0 (dev)
 
-*  Renamed schema missing setting `rawstr` to `verbatim`.
+*  Renamed schema missing setting `rawstr` to `verbatim`.  `rawstr` is still
+   accepted for backward compatibility.
 
 *  Added schema support for `Any` type.  Added schema support for `verbatim`
    type, which keeps the string value received from LaTeX without any
