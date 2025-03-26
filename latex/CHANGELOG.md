@@ -1,6 +1,16 @@
 # Changelog — latex2pydata LaTeX package
 
 
+## v0.6.0 (dev)
+
+*  `\pydatasetfilename` now automatically reuses file handles when files are
+   closed, so that the total number of file handles created is never more than
+   the maximum number of files open simultaneously.  This minimizes the
+   potential for "`No more room for a new \write`" errors.  Previously, one
+   file handle was created per file (#2).
+
+
+
 ## v0.5.0 (2025/03/03)
 
 *  Renamed schema missing setting `rawstr` to `verbatim`.

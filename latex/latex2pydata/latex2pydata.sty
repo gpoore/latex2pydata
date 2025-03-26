@@ -20,7 +20,7 @@
 %% 
 \NeedsTeXFormat{LaTeX2e}[1999/12/01]
 \ProvidesPackage{latex2pydata}
-    [2025/03/03 v0.5.0 latex2pydata - write data to file in Python literal format]
+    [2025/03/25 v0.6.0dev1 latex2pydata - write data to file in Python literal format]
 \def\pydata@error#1{%
   \PackageError{latex2pydata}{#1}{}%
   \batchmode\read -1 to \pydata@exitnow}
@@ -131,27 +131,67 @@
    {}%
   \pydata@fhresetstate{#1}%
   \booltrue{pydata@fhisreleased@\number#1}}
+\def\pydata@fhpoolsize{0}
 \def\pydatasetfilename#1{%
   \if\relax\detokenize{#1}\relax
     \pydata@error{Missing filename}%
   \fi
-  \ifcsname pydata@fh@#1\endcsname
+  \ifcsname pydata@filenamefh@#1\endcsname
+    \expandafter\let\expandafter\pydata@fhtmp
+      \csname pydata@filenamefh@#1\endcsname
+    \expandafter\let\expandafter\pydata@fhpoolindextmp
+      \csname pydata@filenamefhpoolindex@#1\endcsname
   \else
-    \expandafter\newwrite\csname pydata@fh@#1\endcsname
+    \def\pydata@fhpoolindex{0}%
+    \loop\unless\ifnum\pydata@fhpoolindex=\pydata@fhpoolsize\relax
+      \ifbool{pydata@fileisopen@\pydata@fhpoolindex}%
+       {}%
+       {\expandafter\let\expandafter\pydata@fhtmp
+          \csname pydata@fh@\pydata@fhpoolindex\endcsname
+        \let\pydata@fhpoolindextmp\pydata@fhpoolindex
+        \expandafter\global\expandafter
+          \let\csname pydata@filenamefh@#1\endcsname\pydata@fhtmp
+        \expandafter\global\expandafter
+          \let\csname pydata@filenamefhpoolindex@#1\endcsname\pydata@fhpoolindextmp
+        \let\pydata@fhpoolindex\pydata@fhpoolsize}%
+    \repeat
+    \let\pydata@fhpoolindex\pydata@undefined
+    \ifcsname pydata@filenamefh@#1\endcsname
+    \else
+      \expandafter\newwrite\csname pydata@fh@\pydata@fhpoolsize\endcsname
+      \pydata@newglobalbool{pydata@fileisopen@\pydata@fhpoolsize}%
+      \expandafter\let\expandafter\pydata@fhtmp
+        \csname pydata@fh@\pydata@fhpoolsize\endcsname
+      \expandafter\global\expandafter
+        \let\csname pydata@filenamefh@#1\endcsname\pydata@fhtmp
+      \let\pydata@fhpoolindextmp\pydata@fhpoolsize
+      \expandafter\global\expandafter
+        \let\csname pydata@filenamefhpoolindex@#1\endcsname\pydata@fhpoolindextmp
+      \xdef\pydata@fhpoolsize{\the\numexpr\pydata@fhpoolsize+1\relax}%
+    \fi
   \fi
-  \pydata@provideglobalbool{pydata@fileisopen@#1}%
-  \ifbool{pydata@fileisopen@#1}%
+  \ifbool{pydata@fileisopen@\pydata@fhpoolindextmp}%
    {}%
-   {\expandafter\immediate\expandafter\openout\csname pydata@fh@#1\endcsname=#1\relax
-    \booltrue{pydata@fileisopen@#1}}%
-  \expandafter\pydatasetfilehandle\expandafter{\csname pydata@fh@#1\endcsname}}
+   {\immediate\openout\pydata@fhtmp=#1\relax
+    \booltrue{pydata@fileisopen@\pydata@fhpoolindextmp}}%
+  \pydatasetfilehandle{\pydata@fhtmp}%
+  \let\pydata@fhtmp\pydata@undefined
+  \let\pydata@fhpoolindextmp\pydata@undefined}
 \def\pydataclosefilename#1{%
-  \ifcsname pydata@fh@#1\endcsname
-    \ifbool{pydata@fileisopen@#1}%
-     {\expandafter\pydatareleasefilehandle\expandafter{\csname pydata@fh@#1\endcsname}%
-      \expandafter\immediate\expandafter\closeout\csname pydata@fh@#1\endcsname
-      \boolfalse{pydata@fileisopen@#1}}%
-     {}%
+  \ifcsname pydata@filenamefh@#1\endcsname
+    \expandafter\let\expandafter\pydata@fhtmp
+      \csname pydata@filenamefh@#1\endcsname
+    \expandafter\let\expandafter\pydata@fhpoolindextmp
+      \csname pydata@filenamefhpoolindex@#1\endcsname
+    \pydatareleasefilehandle{\pydata@fhtmp}%
+    \immediate\closeout\pydata@fhtmp
+    \boolfalse{pydata@fileisopen@\pydata@fhpoolindextmp}%
+    \expandafter\global\expandafter
+      \let\csname pydata@filenamefh@#1\endcsname\pydata@undefined
+    \expandafter\global\expandafter
+      \let\csname pydata@filenamefhpoolindex@#1\endcsname\pydata@undefined
+    \let\pydata@fhtmp\pydata@undefined
+    \let\pydata@fhpoolindextmp\pydata@undefined
   \else
     \pydata@error{Unknown file name "#1"}%
   \fi}

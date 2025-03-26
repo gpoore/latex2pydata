@@ -27,7 +27,7 @@
 %<package>\NeedsTeXFormat{LaTeX2e}[1999/12/01]
 %<package>\ProvidesPackage{latex2pydata}
 %<*package>
-    [2025/03/03 v0.5.0 latex2pydata - write data to file in Python literal format]
+    [2025/03/25 v0.6.0dev1 latex2pydata - write data to file in Python literal format]
 %</package>
 %
 %<*driver>
@@ -381,6 +381,8 @@
 % To switch from one file to another, simply use |\pydatasetfilename| with the new filename.  When the file is no longer in use, |\pydataclosefilename| is recommended.
 %
 % |\pydatasetfilename| sets the filename globally.
+%
+% Implementation note:  This automatically creates the necessary file handles with |\newwrite|.  File handles are automatically reused when files are closed, so that the total number of file handles created is never more than the maximum number of files open simultaneously.  This minimizes the potential for ``\Verb[breaklines]{No more room for a new \write}'' errors.
 %
 % \DescMacro{\pydataclosefilename\marg{filename}}
 % Close a file previously opened with |\pydatasetfilename|.  Also perform basic checking for incomplete or malformed data written to file.
@@ -782,29 +784,71 @@
 % \end{macro}
 %
 % \begin{macro}{\pydatasetfilename, \pydataclosefilename}
-% Shortcut for creating a |\newwrite| and then passing the file handle to |\pydatasetfilehandle|.  File handles are global.  If the close macro is not invoked, then basic data checking on the \LaTeX\ side will not be performed.  However, \TeX\ will \href{https://tex.stackexchange.com/a/337291}{automatically close open writes at the end of the compile}.
+% Shortcut for invoking |\newwrite| and then passing the file handle to |\pydatasetfilehandle|.  File handles are global.  If the close macro is not invoked, then basic data checking on the \LaTeX\ side will not be performed.  However, \TeX\ will \href{https://tex.stackexchange.com/a/337291}{automatically close open writes at the end of the compile}.
+%
+% File handles created by |\newwrite| are collected in a file handle ``pool'' and then reused when possible to minimize the potential for ``\Verb[breaklines]{No more room for a new \write}'' errors.
 %    \begin{macrocode}
+\def\pydata@fhpoolsize{0}
 \def\pydatasetfilename#1{%
   \if\relax\detokenize{#1}\relax
     \pydata@error{Missing filename}%
   \fi
-  \ifcsname pydata@fh@#1\endcsname
+  \ifcsname pydata@filenamefh@#1\endcsname
+    \expandafter\let\expandafter\pydata@fhtmp
+      \csname pydata@filenamefh@#1\endcsname
+    \expandafter\let\expandafter\pydata@fhpoolindextmp
+      \csname pydata@filenamefhpoolindex@#1\endcsname
   \else
-    \expandafter\newwrite\csname pydata@fh@#1\endcsname
+    \def\pydata@fhpoolindex{0}%
+    \loop\unless\ifnum\pydata@fhpoolindex=\pydata@fhpoolsize\relax
+      \ifbool{pydata@fileisopen@\pydata@fhpoolindex}%
+       {}%
+       {\expandafter\let\expandafter\pydata@fhtmp
+          \csname pydata@fh@\pydata@fhpoolindex\endcsname
+        \let\pydata@fhpoolindextmp\pydata@fhpoolindex
+        \expandafter\global\expandafter
+          \let\csname pydata@filenamefh@#1\endcsname\pydata@fhtmp
+        \expandafter\global\expandafter
+          \let\csname pydata@filenamefhpoolindex@#1\endcsname\pydata@fhpoolindextmp
+        \let\pydata@fhpoolindex\pydata@fhpoolsize}%
+    \repeat
+    \let\pydata@fhpoolindex\pydata@undefined
+    \ifcsname pydata@filenamefh@#1\endcsname
+    \else
+      \expandafter\newwrite\csname pydata@fh@\pydata@fhpoolsize\endcsname
+      \pydata@newglobalbool{pydata@fileisopen@\pydata@fhpoolsize}%
+      \expandafter\let\expandafter\pydata@fhtmp
+        \csname pydata@fh@\pydata@fhpoolsize\endcsname
+      \expandafter\global\expandafter
+        \let\csname pydata@filenamefh@#1\endcsname\pydata@fhtmp
+      \let\pydata@fhpoolindextmp\pydata@fhpoolsize
+      \expandafter\global\expandafter
+        \let\csname pydata@filenamefhpoolindex@#1\endcsname\pydata@fhpoolindextmp
+      \xdef\pydata@fhpoolsize{\the\numexpr\pydata@fhpoolsize+1\relax}%
+    \fi
   \fi
-  \pydata@provideglobalbool{pydata@fileisopen@#1}%
-  \ifbool{pydata@fileisopen@#1}%
+  \ifbool{pydata@fileisopen@\pydata@fhpoolindextmp}%
    {}%
-   {\expandafter\immediate\expandafter\openout\csname pydata@fh@#1\endcsname=#1\relax
-    \booltrue{pydata@fileisopen@#1}}%
-  \expandafter\pydatasetfilehandle\expandafter{\csname pydata@fh@#1\endcsname}}
+   {\immediate\openout\pydata@fhtmp=#1\relax
+    \booltrue{pydata@fileisopen@\pydata@fhpoolindextmp}}%
+  \pydatasetfilehandle{\pydata@fhtmp}%
+  \let\pydata@fhtmp\pydata@undefined
+  \let\pydata@fhpoolindextmp\pydata@undefined}
 \def\pydataclosefilename#1{%
-  \ifcsname pydata@fh@#1\endcsname
-    \ifbool{pydata@fileisopen@#1}%
-     {\expandafter\pydatareleasefilehandle\expandafter{\csname pydata@fh@#1\endcsname}%
-      \expandafter\immediate\expandafter\closeout\csname pydata@fh@#1\endcsname
-      \boolfalse{pydata@fileisopen@#1}}%
-     {}%
+  \ifcsname pydata@filenamefh@#1\endcsname
+    \expandafter\let\expandafter\pydata@fhtmp
+      \csname pydata@filenamefh@#1\endcsname
+    \expandafter\let\expandafter\pydata@fhpoolindextmp
+      \csname pydata@filenamefhpoolindex@#1\endcsname
+    \pydatareleasefilehandle{\pydata@fhtmp}%
+    \immediate\closeout\pydata@fhtmp
+    \boolfalse{pydata@fileisopen@\pydata@fhpoolindextmp}%
+    \expandafter\global\expandafter
+      \let\csname pydata@filenamefh@#1\endcsname\pydata@undefined
+    \expandafter\global\expandafter
+      \let\csname pydata@filenamefhpoolindex@#1\endcsname\pydata@undefined
+    \let\pydata@fhtmp\pydata@undefined
+    \let\pydata@fhpoolindextmp\pydata@undefined
   \else
     \pydata@error{Unknown file name "#1"}%
   \fi}
