@@ -1,7 +1,7 @@
 # Changelog — latex2pydata LaTeX package
 
 
-## v0.6.0 (dev)
+## v0.6.0 (2025/03/26)
 
 *  `\pydatasetfilename` now automatically reuses file handles when files are
    closed, so that the total number of file handles created is never more than
