@@ -8,7 +8,7 @@
 %% 
 %% This is a generated file.
 %% 
-%% Copyright (C) 2023-2025 by Geoffrey M. Poore <gpoore@gmail.com>
+%% Copyright (C) 2023-2026 by Geoffrey M. Poore <gpoore@gmail.com>
 %% --------------------------------------------------------------------------
 %% This work may be distributed and/or modified under the
 %% conditions of the LaTeX Project Public License, either version 1.3c
@@ -20,7 +20,7 @@
 %% 
 \NeedsTeXFormat{LaTeX2e}[1999/12/01]
 \ProvidesPackage{latex2pydata}
-    [2025/03/26 v0.6.0 latex2pydata - write data to file in Python literal format]
+    [2026/02/25 v0.7.0 latex2pydata - write data to file in Python literal format]
 \def\pydata@error#1{%
   \PackageError{latex2pydata}{#1}{}%
   \batchmode\read -1 to \pydata@exitnow}
@@ -28,9 +28,8 @@
   \PackageWarning{latex2pydata}{#1}}
 \RequirePackage{etoolbox}
 \RequirePackage{fvextra}
-\IfPackageAtLeastTF{fvextra}{2024/05/16}%
+\IfPackageAtLeastTF{fvextra}{2026/02/25}%
  {}{\pydata@error{package fvextra is outdated; upgrade to the latest version}}
-\RequirePackage{pdftexcmds}
 \def\pydata@empty{}
 \def\pydata@gnewif#1{%
   \count@\escapechar
@@ -245,7 +244,7 @@
     \boolfalse{pydata@bufferhaskey}%
   \fi}
 \def\pydatabuffermdfivesum{%
-  \pdf@mdfivesum{%
+  \csname str_mdfive_hash:e\endcsname{%
     \ifnum\pydata@bufferlengthmacro<1
       \expandafter\@firstoftwo
     \else

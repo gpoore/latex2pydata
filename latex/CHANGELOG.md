@@ -1,6 +1,21 @@
 # Changelog — latex2pydata LaTeX package
 
 
+## v0.7.0 (2026/02/25)
+
+*  Switched to `\str_mdfive_hash:e` for MD5 hashing.  This replaces
+   `\pdf@mdfivesum` from the `pdftexcmds` package.  Under LuaTeX,
+   `\pdf@mdfivesum` ignores most multi-byte code points (code points >= 256
+   for UTF-8), which can cause hash collisions (#3, gpoore/minted#467).
+
+   `\pdf@mdfivesumnative` provides the desired functionality, but switching to
+   `\str_mdfive_hash:e` is simpler and allows dropping the `pdftexcmds`
+   package as a dependency.
+
+*  Minimum supported `fvextra` is now v1.14.0 (2026/02/25).
+
+
+
 ## v0.6.0 (2025/03/26)
 
 *  `\pydatasetfilename` now automatically reuses file handles when files are

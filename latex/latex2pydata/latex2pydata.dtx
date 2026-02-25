@@ -1,7 +1,7 @@
 % \iffalse meta-comment
 % !TEX TS-program = pdflatexmk
 %
-% Copyright (C) 2023-2025 by Geoffrey M. Poore <gpoore@gmail.com>
+% Copyright (C) 2023-2026 by Geoffrey M. Poore <gpoore@gmail.com>
 % ---------------------------------------------------------------------------
 % This work may be distributed and/or modified under the
 % conditions of the LaTeX Project Public License, either version 1.3c
@@ -27,7 +27,7 @@
 %<package>\NeedsTeXFormat{LaTeX2e}[1999/12/01]
 %<package>\ProvidesPackage{latex2pydata}
 %<*package>
-    [2025/03/26 v0.6.0 latex2pydata - write data to file in Python literal format]
+    [2026/02/25 v0.7.0 latex2pydata - write data to file in Python literal format]
 %</package>
 %
 %<*driver>
@@ -506,7 +506,7 @@
 % \subsubsection{Special buffer operations}
 %
 % \DescMacro{\pydatabuffermdfivesum}
-% Calculate the MD5 hash of the current buffer, using |\pdf@mdfivesum| from \href{https://ctan.org/pkg/pdftexcmds}{\pkg{pdftexcmds}}.  This is fully expandable.  For example:
+% Calculate the MD5 hash of the current buffer, using |\str_mdfive_hash:e|.  This is fully expandable.  For example:
 % \begin{Verbatim}[gobble=2]
 % \edef\hash{\pydatabuffermdfivesum}
 % \end{Verbatim}
@@ -583,9 +583,8 @@
 %    \begin{macrocode}
 \RequirePackage{etoolbox}
 \RequirePackage{fvextra}
-\IfPackageAtLeastTF{fvextra}{2024/05/16}%
+\IfPackageAtLeastTF{fvextra}{2026/02/25}%
  {}{\pydata@error{package fvextra is outdated; upgrade to the latest version}}
-\RequirePackage{pdftexcmds}
 %    \end{macrocode}
 %
 %
@@ -942,7 +941,7 @@
 % Calculate buffer MD5.
 %    \begin{macrocode}
 \def\pydatabuffermdfivesum{%
-  \pdf@mdfivesum{%
+  \csname str_mdfive_hash:e\endcsname{%
     \ifnum\pydata@bufferlengthmacro<1
       \expandafter\@firstoftwo
     \else
